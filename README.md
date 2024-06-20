@@ -105,17 +105,17 @@ Untuk menggunakan BiomeJS di VSCode, berikut langkah - langkah nya:
 
 ### A. Clone
 
-1. Buka CMD, PowerShell atau terminal lainnya.
+#### 1. Buka CMD, PowerShell atau terminal lainnya.
 
-2. Masuk ke direktori dimana kalian ingin menyimpan repositori ini disimpan.
+#### 2. Masuk ke direktori dimana kalian ingin menyimpan repositori ini disimpan.
 
-3. Jalankan perintah berikut:
+#### 3. Jalankan perintah berikut:
 
 ```bat
 git clone https://github.com/ItsMalma/goumrah
 ```
 
-4. Masuk ke dalam folder repositori nya, jika kalian sebelumnya mengclone repositori nya sesuai dengan perintah di atas, maka masukkan perintah berikut:
+#### 4. Masuk ke dalam folder repositori nya, jika kalian sebelumnya mengclone repositori nya sesuai dengan perintah di atas, maka masukkan perintah berikut:
 
 ```bat
 cd goumrah
@@ -123,19 +123,19 @@ cd goumrah
 
 ### B. Setup
 
-# 1. Install semua dependensi dan package dengan bun, masukkan perintah berikut:
+#### 1. Install semua dependensi dan package dengan bun, masukkan perintah berikut:
 
 ```bat
 bun install
 ```
 
-2. Ubah nama file `.env.example` menjadi `.env`, masukkan perintah berikut:
+#### 2. Ubah nama file `.env.example` menjadi `.env`, masukkan perintah berikut:
 
 ```bat
 ren .env.example .env
 ```
 
-3. Buka file `.env` dan isi key yang sudah disediakan, berikut adalah tabel yang berisikan penjelasan tiap key:
+#### 3. Buka file `.env` dan isi key yang sudah disediakan, berikut adalah tabel yang berisikan penjelasan tiap key:
    | **Key** | **Penjelasan** | **Contoh** |
    |-------------------|------------------------------------|------------|
    | POSTGRES_HOST | Host database yang akan dikoneksikan oleh aplikasi | localhost |
@@ -145,20 +145,20 @@ ren .env.example .env
    | POSTGRES_NAME | Nama database yang akan dipakai | goumrah |
    | DATABASE_URL | URL yang dibentuk dari kelima key di atas untuk digunakan langsung di prisma (Mohon jangan mengubah key yang ini) | **JANGAN DIUBAH!**
 
-4. Install semua tools yang sudah dituliskan di `docker-compose.yml` dengan menjalankan perintah berikut:
+#### 4. Install semua tools yang sudah dituliskan di `docker-compose.yml` dengan menjalankan perintah berikut:
 
 ```bat
 docker compose up -d
 ```
 
-5. Jalankan migrasi pada database dengan schema yang telah dibuat menggunakan Prisma. Jalankan perintah berikut:
+#### 5. Jalankan migrasi pada database dengan schema yang telah dibuat menggunakan Prisma. Jalankan perintah berikut:
 ```bat
 bunx prisma db push
 ```
 
 ### C. Jalankan
 
-1. Jalankan perintah
+#### 1. Jalankan perintah
 
 ```bat
 bun run dev
