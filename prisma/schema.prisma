@@ -1,0 +1,319 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Image {
+  id  Int     @id @default(autoincrement())
+  src String
+  alt String?
+
+  bundles             Bundle[]
+  hotelsThumbnail     Hotel[]              @relation("thumbnail")
+  hotels              Hotel[]
+  airlinesThumbnail   Airline[]            @relation("thumbnail")
+  airlines            Airline[]
+  airlineCertificates AirlineCertificate[]
+  busesThumbnail      Bus[]                @relation("thumbnail")
+  muthowifThumbnail   Muthowif[]           @relation("thumbnail")
+
+  @@map("images")
+}
+
+model Review {
+  id       Int    @id @default(autoincrement())
+  bundle   Bundle @relation(fields: [bundleId], references: [id])
+  bundleId Int    @map("bundle_id")
+  rating   Int
+
+  @@map("reviews")
+}
+
+model Embarkation {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  bundleDetails BundleDetail[]
+
+  @@map("embarkations")
+}
+
+model RoomType {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  bundleDetails BundleDetail[]
+
+  @@map("room_types")
+}
+
+model Facility {
+  id   Int    @id @default(autoincrement())
+  icon String
+  name String
+
+  hotels Hotel[]
+
+  @@map("facilities")
+}
+
+model FoodType {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  hotels Hotel[]
+
+  @@map("food_types")
+}
+
+model FoodMenu {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  foodMenuHotels FoodMenuHotel[]
+
+  @@map("food_menus")
+}
+
+model FoodMenuHotel {
+  id         Int      @id @default(autoincrement())
+  amount     Int
+  foodMenu   FoodMenu @relation(fields: [foodMenuId], references: [id])
+  foodMenuId Int      @map("food_menu_id")
+  hotel      Hotel    @relation(fields: [hotelId], references: [id])
+  hotelId    Int      @map("hotel_id")
+
+  @@map("food_menu_hotels")
+}
+
+model Hotel {
+  id          Int             @id @default(autoincrement())
+  thumbnail   Image           @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnailId Int             @map("thumbnail_id")
+  rating      Int
+  name        String
+  helpLink    String
+  images      Image[]
+  description String
+  facilities  Facility[]
+  mapLink     String
+  address     String
+  distance    Int
+  foodType    FoodType        @relation(fields: [foodTypeId], references: [id])
+  foodTypeId  Int             @map("food_type_id")
+  foodAmount  Int
+  foodMenus   FoodMenuHotel[]
+  reviewLink  String
+  schedules   HotelSchedule[]
+
+  @@map("hotels")
+}
+
+model HotelSchedule {
+  id       Int      @id @default(autoincrement())
+  hotel    Hotel    @relation(fields: [hotelId], references: [id])
+  hotelId  Int      @map("hotel_id")
+  checkIn  DateTime
+  checkOut DateTime
+
+  bundleDetailsMakkah  BundleDetail? @relation("makkah")
+  bundleDetailsMadinah BundleDetail? @relation("madinah")
+
+  @@map("hotel_schedules")
+}
+
+model AirlineCertificate {
+  id       Int       @id @default(autoincrement())
+  image    Image     @relation(fields: [imageId], references: [id])
+  imageId  Int       @map("image_id")
+  name     String
+  color    String
+  airlines Airline[]
+
+  @@map("airline_certificates")
+}
+
+model Airline {
+  id           Int                  @id @default(autoincrement())
+  thumbnail    Image                @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnailId  Int                  @map("thumbnail_id")
+  rating       Int
+  name         String
+  helpLink     String
+  images       Image[]
+  certificates AirlineCertificate[]
+
+  flights Flight[]
+
+  @@map("airlines")
+}
+
+model Airport {
+  id   Int    @id @default(autoincrement())
+  name String
+  code String
+
+  flightEvents FlightEvent[]
+  transits     Transit[]
+
+  @@map("airports")
+}
+
+model FlightEvent {
+  id        Int      @id @default(autoincrement())
+  dateTime  DateTime
+  airport   Airport  @relation(fields: [airportId], references: [id])
+  airportId Int      @map("airport_id")
+  terminal  String
+
+  flightSchedulesTakeOff FlightSchedule? @relation("takeOff")
+  flightSchedulesLanding FlightSchedule? @relation("landing")
+
+  @@map("flight_events")
+}
+
+model Transit {
+  id        Int      @id @default(autoincrement())
+  duration  Int
+  airport   Airport? @relation(fields: [airportId], references: [id])
+  airportId Int?     @map("airport_id")
+
+  flightSchedules FlightSchedule?
+
+  @@map("transits")
+}
+
+model FlightSchedule {
+  id           Int             @id @default(autoincrement())
+  takeOff      FlightEvent     @relation("takeOff", fields: [takeOffId], references: [id])
+  takeOffId    Int             @unique @map("take_off_id")
+  duration     Int
+  flightNumber String
+  aircraftType String
+  baggage      Int
+  cabinBaggage Int
+  seatLayout   String
+  landing      FlightEvent     @relation("landing", fields: [landingId], references: [id])
+  landingId    Int             @unique @map("landing_id")
+  transit      Transit?        @relation(fields: [transitId], references: [id])
+  transitId    Int?            @unique @map("transit_id")
+  next         FlightSchedule? @relation("next", fields: [nextId], references: [id])
+  nextId       Int?            @unique @map("next_id")
+
+  prev            FlightSchedule? @relation("next")
+  flightsOutbound Flight?         @relation("outbound")
+  flightsInbound  Flight?         @relation("inbound")
+
+  @@map("flight_schedules")
+}
+
+model Flight {
+  id         Int            @id @default(autoincrement())
+  airline    Airline        @relation(fields: [airlineId], references: [id])
+  airlineId  Int            @map("airline_id")
+  outbound   FlightSchedule @relation("outbound", fields: [outboundId], references: [id])
+  outboundId Int            @unique @map("outbound_id")
+  inbound    FlightSchedule @relation("inbound", fields: [inboundId], references: [id])
+  inboundId  Int            @unique @map("inbound_id")
+
+  bundleDetails BundleDetail[]
+
+  @@map("flights")
+}
+
+model Bus {
+  id          Int    @id @default(autoincrement())
+  thumbnail   Image  @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnailId Int    @map("thumbnail_id")
+  name        String
+  helpLink    String
+
+  bundleDetails BundleDetail[]
+
+  @@map("buses")
+}
+
+model Agenda {
+  id          Int      @id @default(autoincrement())
+  schedule    Schedule @relation(fields: [scheduleId], references: [id])
+  scheduleId  Int      @map("schedule_id")
+  datetime    DateTime
+  description String
+  next        Agenda?  @relation("next", fields: [nextId], references: [id])
+  nextId      Int?     @unique @map("next_id")
+
+  prev Agenda? @relation("next")
+
+  @@map("agendas")
+}
+
+model Schedule {
+  id             Int          @id @default(autoincrement())
+  bundleDetail   BundleDetail @relation(fields: [bundleDetailId], references: [id])
+  bundleDetailId Int          @map("bundle_detail_id")
+  day            Int
+  name           String
+  date           DateTime
+  agendas        Agenda[]
+
+  @@unique([day, bundleDetailId])
+  @@map("schedules")
+}
+
+model Muthowif {
+  id          Int    @id @default(autoincrement())
+  thumbnail   Image  @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnailId Int    @map("thumbnail_id")
+  name        String
+  bio         String
+  detail      String
+
+  bundleDetails BundleDetail[]
+
+  @@map("muthowif")
+}
+
+model Bundle {
+  id          Int            @id @default(autoincrement())
+  images      Image[]
+  reviews     Review[]
+  name        String
+  description String
+  details     BundleDetail[]
+
+  @@map("bundles")
+}
+
+model BundleDetail {
+  id             Int           @id @default(autoincrement())
+  bundle         Bundle        @relation(fields: [bundleId], references: [id])
+  bundleId       Int           @map("bundle_id")
+  price          Decimal
+  date           DateTime
+  embarkation    Embarkation   @relation(fields: [embarkationId], references: [id])
+  embarkationId  Int           @map("embarkation_id")
+  roomType       RoomType      @relation(fields: [roomTypeId], references: [id])
+  roomTypeId     Int           @map("room_type_id")
+  makkahHotel    HotelSchedule @relation("makkah", fields: [makkahHotelId], references: [id])
+  makkahHotelId  Int           @unique @map("makkah_hotel_id")
+  madinahHotel   HotelSchedule @relation("madinah", fields: [madinahHotelId], references: [id])
+  madinahHotelId Int           @unique @map("madinah_hotel_id")
+  flight         Flight        @relation(fields: [flightId], references: [id])
+  flightId       Int           @map("flight_id")
+  bus            Bus           @relation(fields: [busId], references: [id])
+  busId          Int           @map("bus_id")
+  schedules      Schedule[]
+  muthowif       Muthowif[]
+
+  @@map("bundle_details")
+}
