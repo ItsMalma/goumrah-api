@@ -20,7 +20,7 @@ export default class EmbarkationService
 		return embarkation;
 	}
 
-	async getAll(): Promise<{ name: string; id: number }[]> {
+	async getAll(): Promise<EmbarkationOutput[]> {
 		const embarkations = await db.embarkation.findMany();
 
 		return embarkations;
@@ -43,7 +43,7 @@ export default class EmbarkationService
 		param: EmbarkationParam,
 		input: EmbarkationInput,
 		throwIfNotFound?: boolean,
-	): Promise<{ name: string; id: number }> {
+	): Promise<EmbarkationOutput> {
 		const embarkation = await db.embarkation.update({
 			where: param,
 			data: input,
