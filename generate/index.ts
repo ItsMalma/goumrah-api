@@ -1,42 +1,48 @@
-import { input, select } from "@inquirer/prompts";
+import { confirm, input, select } from "@inquirer/prompts";
 import { Prisma } from "@prisma/client";
 import path from "node:path";
-import ts from "typescript";
-import { camelCaseFromPascal, pascalCase } from "../src/utils/string.util.js";
+import {
+	camelCaseFromPascal,
+	pascalCase,
+	pascalCaseToTitle,
+} from "../src/utils/string.util.js";
 
-const printer = ts.createPrinter({
-	newLine: ts.NewLineKind.LineFeed,
-});
+async function main() {
+	const modelName = await select({
+		message: "Pilih model",
+		choices: Object.values(Prisma.ModelName).map((model) => {
+			return {
+				name: camelCaseFromPascal(model),
+				value: camelCaseFromPascal(model),
+			};
+		}),
+	});
 
-select({
-	message: "Pilih model",
-	choices: Object.values(Prisma.ModelName).map((model) => {
-		return {
-			name: camelCaseFromPascal(model),
-			value: camelCaseFromPascal(model),
-		};
-	}),
-}).then((modelName) => {
-	input({
+	const resourceName = await input({
 		message: "Nama resource",
-	}).then((resourceName) => {
-		input({
-			message: "Controller path",
-		}).then((controllerPath) => {
-			const resourceNamePascalCase = pascalCase(resourceName);
+	});
+	const resourceNamePascalCase = pascalCase(resourceName);
+	const resourceNameTitle = pascalCaseToTitle(resourceName);
 
-			// create schema
-			const schemaFilePath = path.join(
-				__dirname,
-				"..",
-				"src",
-				"schemas",
-				`${resourceName}.schema.ts`,
-			);
-			const schemaFile = Bun.file(schemaFilePath);
-			Bun.write(
-				schemaFile,
-				`import {
+	const controllerPath = await input({
+		message: "Controller path",
+	});
+
+	// create schema
+	let confirmed = await confirm({ message: "Buat schema?" });
+	if (!confirmed) return;
+
+	const schemaFilePath = path.join(
+		__dirname,
+		"..",
+		"src",
+		"schemas",
+		`${resourceName}.schema.ts`,
+	);
+	const schemaFile = Bun.file(schemaFilePath);
+	Bun.write(
+		schemaFile,
+		`import {
 	check,
 	number,
 	object,
@@ -63,32 +69,39 @@ export const ${resourceName}ParamSchema = object({
 	),
 });
 export type ${resourceNamePascalCase}Param = InferOutput<typeof ${resourceName}ParamSchema>;`,
-			);
+	);
 
-			// create service
-			const serviceFilePath = path.join(
-				__dirname,
-				"..",
-				"src",
-				"services",
-				`${resourceName}.service.ts`,
-			);
-			const serviceFile = Bun.file(serviceFilePath);
-			Bun.write(
-				serviceFile,
-				`import { HTTPException } from "hono/http-exception";
+	// create service
+	confirmed = await confirm({ message: "Buat service?" });
+	if (!confirmed) return;
+
+	const serviceFilePath = path.join(
+		__dirname,
+		"..",
+		"src",
+		"services",
+		`${resourceName}.service.ts`,
+	);
+	const serviceFile = Bun.file(serviceFilePath);
+	Bun.write(
+		serviceFile,
+		`import { HTTPException } from "hono/http-exception";
 import db from "../db";
 import type {
 	${resourceNamePascalCase}Input,
 	${resourceNamePascalCase}Output,
 	${resourceNamePascalCase}Param,
 } from "../schemas/${resourceName}.schema";
-import type CRUDService from "./crud.service";
+import CRUDService from "./crud.service";
 
-export default class ${resourceNamePascalCase}Service
-	implements CRUDService<${resourceNamePascalCase}Input, ${resourceNamePascalCase}Output, ${resourceNamePascalCase}Param>
-{
-	private constructor() {}
+export default class ${resourceNamePascalCase}Service extends CRUDService<
+	${resourceNamePascalCase}Input,
+	${resourceNamePascalCase}Output,
+	${resourceNamePascalCase}Param
+> {
+	private constructor() {
+  	super()
+	}
 
 	async create(input: ${resourceNamePascalCase}Input): Promise<${resourceNamePascalCase}Output> {
 		const ${resourceName} = await db.${modelName}.create({
@@ -104,43 +117,40 @@ export default class ${resourceNamePascalCase}Service
 		return ${controllerPath};
 	}
 
-	async getById(
-		param: ${resourceNamePascalCase}Param,
-		throwIfNotFound?: boolean,
-	): Promise<${resourceNamePascalCase}Output | null> {
+	async get(
+		param: ${resourceNamePascalCase}Param
+	): Promise<${resourceNamePascalCase}Output> {
 		const ${resourceName} = await db.${modelName}.findUnique({
 			where: param,
 		});
-		if (!${resourceName} && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!${resourceName})
+			throw new HTTPException(404, { message: "${resourceNameTitle} tidak ditemukan" });
 
 		return ${resourceName};
 	}
 
 	async update(
 		param: ${resourceNamePascalCase}Param,
-		input: ${resourceNamePascalCase}Input,
-		throwIfNotFound?: boolean,
+		input: ${resourceNamePascalCase}Input
 	): Promise<${resourceNamePascalCase}Output> {
 		const ${resourceName} = await db.${modelName}.update({
 			where: param,
 			data: input,
 		});
-		if (!${resourceName} && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!${resourceName})
+			throw new HTTPException(404, { message: "${resourceNameTitle} tidak ditemukan" });
 
 		return ${resourceName};
 	}
 
 	async delete(
-		param: ${resourceNamePascalCase}Param,
-		throwIfNotFound?: boolean,
+		param: ${resourceNamePascalCase}Param
 	): Promise<${resourceNamePascalCase}Output> {
 		const ${resourceName} = await db.${modelName}.delete({
 			where: param,
 		});
-		if (!${resourceName} && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!${resourceName})
+			throw new HTTPException(404, { message: "${resourceNameTitle} tidak ditemukan" });
 
 		return ${resourceName};
 	}
@@ -152,20 +162,23 @@ export default class ${resourceNamePascalCase}Service
 		return ${resourceNamePascalCase}Service._instance;
 	}
 }`,
-			);
+	);
 
-			// create controller
-			const controllerFilePath = path.join(
-				__dirname,
-				"..",
-				"src",
-				"controllers",
-				`${resourceName}.controller.ts`,
-			);
-			const controllerFile = Bun.file(controllerFilePath);
-			Bun.write(
-				controllerFile,
-				`import { Hono } from "hono";
+	// create controller
+	confirmed = await confirm({ message: "Buat controller?" });
+	if (!confirmed) return;
+
+	const controllerFilePath = path.join(
+		__dirname,
+		"..",
+		"src",
+		"controllers",
+		`${resourceName}.controller.ts`,
+	);
+	const controllerFile = Bun.file(controllerFilePath);
+	Bun.write(
+		controllerFile,
+		`import { Hono } from "hono";
 import { validate } from "../middlewares/validate.middleware";
 import {
 	${resourceName}InputSchema,
@@ -190,7 +203,7 @@ const ${resourceName}Controller = new Hono()
 	.get("/:id", validate("param", ${resourceName}ParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await ${resourceNamePascalCase}Service.instance.getById(param, true);
+		const output = await ${resourceNamePascalCase}Service.instance.getById(param);
 
 		return c.json(output);
 	})
@@ -204,8 +217,7 @@ const ${resourceName}Controller = new Hono()
 
 			const output = await ${resourceNamePascalCase}Service.instance.update(
 				param,
-				input,
-				true,
+				input
 			);
 
 			return c.json(output);
@@ -214,13 +226,13 @@ const ${resourceName}Controller = new Hono()
 	.delete("/:id", validate("param", ${resourceName}ParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await ${resourceNamePascalCase}Service.instance.delete(param, true);
+		const output = await ${resourceNamePascalCase}Service.instance.delete(param);
 
 		return c.json(output);
 	});
 
 export default ${resourceName}Controller;`,
-			);
-		});
-	});
-});
+	);
+}
+
+main();

@@ -5,12 +5,16 @@ import type {
 	EmbarkationOutput,
 	EmbarkationParam,
 } from "../schemas/embarkation.schema";
-import type CRUDService from "./crud.service";
+import CRUDService from "./crud.service";
 
-export default class EmbarkationService
-	implements CRUDService<EmbarkationInput, EmbarkationOutput, EmbarkationParam>
-{
-	private constructor() {}
+export default class EmbarkationService extends CRUDService<
+	EmbarkationInput,
+	EmbarkationOutput,
+	EmbarkationParam
+> {
+	private constructor() {
+		super();
+	}
 
 	async create(input: EmbarkationInput): Promise<EmbarkationOutput> {
 		const embarkation = await db.embarkation.create({
@@ -26,15 +30,12 @@ export default class EmbarkationService
 		return embarkations;
 	}
 
-	async getById(
-		param: EmbarkationParam,
-		throwIfNotFound?: boolean,
-	): Promise<EmbarkationOutput | null> {
+	async get(param: EmbarkationParam): Promise<EmbarkationOutput> {
 		const embarkation = await db.embarkation.findUnique({
 			where: param,
 		});
-		if (!embarkation && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!embarkation)
+			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
 
 		return embarkation;
 	}
@@ -42,27 +43,23 @@ export default class EmbarkationService
 	async update(
 		param: EmbarkationParam,
 		input: EmbarkationInput,
-		throwIfNotFound?: boolean,
 	): Promise<EmbarkationOutput> {
 		const embarkation = await db.embarkation.update({
 			where: param,
 			data: input,
 		});
-		if (!embarkation && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!embarkation)
+			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
 
 		return embarkation;
 	}
 
-	async delete(
-		param: EmbarkationParam,
-		throwIfNotFound?: boolean,
-	): Promise<EmbarkationOutput> {
+	async delete(param: EmbarkationParam): Promise<EmbarkationOutput> {
 		const embarkation = await db.embarkation.delete({
 			where: param,
 		});
-		if (!embarkation && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!embarkation)
+			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
 
 		return embarkation;
 	}

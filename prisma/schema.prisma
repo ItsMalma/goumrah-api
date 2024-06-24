@@ -15,7 +15,7 @@ datasource db {
 
 model Image {
   id  Int     @id @default(autoincrement())
-  src String
+  src String  @unique
   alt String?
 
   bundles             Bundle[]
@@ -32,7 +32,7 @@ model Image {
 
 model Review {
   id       Int    @id @default(autoincrement())
-  bundle   Bundle @relation(fields: [bundleId], references: [id])
+  bundle   Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   bundleId Int    @map("bundle_id")
   rating   Int
 
@@ -41,7 +41,7 @@ model Review {
 
 model Embarkation {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
   bundleDetails BundleDetail[]
 
@@ -50,7 +50,7 @@ model Embarkation {
 
 model RoomType {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
   bundleDetails BundleDetail[]
 
@@ -60,7 +60,7 @@ model RoomType {
 model Facility {
   id   Int    @id @default(autoincrement())
   icon String
-  name String
+  name String @unique
 
   hotels Hotel[]
 
@@ -69,7 +69,7 @@ model Facility {
 
 model FoodType {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
   hotels Hotel[]
 
@@ -78,7 +78,7 @@ model FoodType {
 
 model FoodMenu {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
   foodMenuHotels FoodMenuHotel[]
 
@@ -88,20 +88,21 @@ model FoodMenu {
 model FoodMenuHotel {
   id         Int      @id @default(autoincrement())
   amount     Int
-  foodMenu   FoodMenu @relation(fields: [foodMenuId], references: [id])
+  foodMenu   FoodMenu @relation(fields: [foodMenuId], references: [id], onDelete: Cascade)
   foodMenuId Int      @map("food_menu_id")
-  hotel      Hotel    @relation(fields: [hotelId], references: [id])
+  hotel      Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   hotelId    Int      @map("hotel_id")
 
+  @@unique([foodMenuId, hotelId])
   @@map("food_menu_hotels")
 }
 
 model Hotel {
   id          Int             @id @default(autoincrement())
-  thumbnail   Image           @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnail   Image           @relation("thumbnail", fields: [thumbnailId], references: [id], onDelete: Cascade)
   thumbnailId Int             @map("thumbnail_id")
   rating      Int
-  name        String
+  name        String          @unique
   helpLink    String
   images      Image[]
   description String
@@ -109,7 +110,7 @@ model Hotel {
   mapLink     String
   address     String
   distance    Int
-  foodType    FoodType        @relation(fields: [foodTypeId], references: [id])
+  foodType    FoodType        @relation(fields: [foodTypeId], references: [id], onDelete: Cascade)
   foodTypeId  Int             @map("food_type_id")
   foodAmount  Int
   foodMenus   FoodMenuHotel[]
@@ -121,7 +122,7 @@ model Hotel {
 
 model HotelSchedule {
   id       Int      @id @default(autoincrement())
-  hotel    Hotel    @relation(fields: [hotelId], references: [id])
+  hotel    Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   hotelId  Int      @map("hotel_id")
   checkIn  DateTime
   checkOut DateTime
@@ -134,9 +135,9 @@ model HotelSchedule {
 
 model AirlineCertificate {
   id       Int       @id @default(autoincrement())
-  image    Image     @relation(fields: [imageId], references: [id])
+  image    Image     @relation(fields: [imageId], references: [id], onDelete: Cascade)
   imageId  Int       @map("image_id")
-  name     String
+  name     String    @unique
   color    String
   airlines Airline[]
 
@@ -145,10 +146,10 @@ model AirlineCertificate {
 
 model Airline {
   id           Int                  @id @default(autoincrement())
-  thumbnail    Image                @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnail    Image                @relation("thumbnail", fields: [thumbnailId], references: [id], onDelete: Cascade)
   thumbnailId  Int                  @map("thumbnail_id")
   rating       Int
-  name         String
+  name         String               @unique
   helpLink     String
   images       Image[]
   certificates AirlineCertificate[]
@@ -160,8 +161,8 @@ model Airline {
 
 model Airport {
   id   Int    @id @default(autoincrement())
-  name String
-  code String
+  name String @unique
+  code String @unique
 
   flightEvents FlightEvent[]
   transits     Transit[]
@@ -172,7 +173,7 @@ model Airport {
 model FlightEvent {
   id        Int      @id @default(autoincrement())
   dateTime  DateTime
-  airport   Airport  @relation(fields: [airportId], references: [id])
+  airport   Airport  @relation(fields: [airportId], references: [id], onDelete: Cascade)
   airportId Int      @map("airport_id")
   terminal  String
 
@@ -185,7 +186,7 @@ model FlightEvent {
 model Transit {
   id        Int      @id @default(autoincrement())
   duration  Int
-  airport   Airport? @relation(fields: [airportId], references: [id])
+  airport   Airport? @relation(fields: [airportId], references: [id], onDelete: Cascade)
   airportId Int?     @map("airport_id")
 
   flightSchedules FlightSchedule?
@@ -195,7 +196,7 @@ model Transit {
 
 model FlightSchedule {
   id           Int             @id @default(autoincrement())
-  takeOff      FlightEvent     @relation("takeOff", fields: [takeOffId], references: [id])
+  takeOff      FlightEvent     @relation("takeOff", fields: [takeOffId], references: [id], onDelete: Cascade)
   takeOffId    Int             @unique @map("take_off_id")
   duration     Int
   flightNumber String
@@ -203,11 +204,11 @@ model FlightSchedule {
   baggage      Int
   cabinBaggage Int
   seatLayout   String
-  landing      FlightEvent     @relation("landing", fields: [landingId], references: [id])
+  landing      FlightEvent     @relation("landing", fields: [landingId], references: [id], onDelete: Cascade)
   landingId    Int             @unique @map("landing_id")
-  transit      Transit?        @relation(fields: [transitId], references: [id])
+  transit      Transit?        @relation(fields: [transitId], references: [id], onDelete: Cascade)
   transitId    Int?            @unique @map("transit_id")
-  next         FlightSchedule? @relation("next", fields: [nextId], references: [id])
+  next         FlightSchedule? @relation("next", fields: [nextId], references: [id], onDelete: Cascade)
   nextId       Int?            @unique @map("next_id")
 
   prev            FlightSchedule? @relation("next")
@@ -219,11 +220,11 @@ model FlightSchedule {
 
 model Flight {
   id         Int            @id @default(autoincrement())
-  airline    Airline        @relation(fields: [airlineId], references: [id])
+  airline    Airline        @relation(fields: [airlineId], references: [id], onDelete: Cascade)
   airlineId  Int            @map("airline_id")
-  outbound   FlightSchedule @relation("outbound", fields: [outboundId], references: [id])
+  outbound   FlightSchedule @relation("outbound", fields: [outboundId], references: [id], onDelete: Cascade)
   outboundId Int            @unique @map("outbound_id")
-  inbound    FlightSchedule @relation("inbound", fields: [inboundId], references: [id])
+  inbound    FlightSchedule @relation("inbound", fields: [inboundId], references: [id], onDelete: Cascade)
   inboundId  Int            @unique @map("inbound_id")
 
   bundleDetails BundleDetail[]
@@ -233,9 +234,9 @@ model Flight {
 
 model Bus {
   id          Int    @id @default(autoincrement())
-  thumbnail   Image  @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnail   Image  @relation("thumbnail", fields: [thumbnailId], references: [id], onDelete: Cascade)
   thumbnailId Int    @map("thumbnail_id")
-  name        String
+  name        String @unique
   helpLink    String
 
   bundleDetails BundleDetail[]
@@ -245,11 +246,11 @@ model Bus {
 
 model Agenda {
   id          Int      @id @default(autoincrement())
-  schedule    Schedule @relation(fields: [scheduleId], references: [id])
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   scheduleId  Int      @map("schedule_id")
   datetime    DateTime
   description String
-  next        Agenda?  @relation("next", fields: [nextId], references: [id])
+  next        Agenda?  @relation("next", fields: [nextId], references: [id], onDelete: Cascade)
   nextId      Int?     @unique @map("next_id")
 
   prev Agenda? @relation("next")
@@ -259,7 +260,7 @@ model Agenda {
 
 model Schedule {
   id             Int          @id @default(autoincrement())
-  bundleDetail   BundleDetail @relation(fields: [bundleDetailId], references: [id])
+  bundleDetail   BundleDetail @relation(fields: [bundleDetailId], references: [id], onDelete: Cascade)
   bundleDetailId Int          @map("bundle_detail_id")
   day            Int
   name           String
@@ -272,9 +273,9 @@ model Schedule {
 
 model Muthowif {
   id          Int    @id @default(autoincrement())
-  thumbnail   Image  @relation("thumbnail", fields: [thumbnailId], references: [id])
+  thumbnail   Image  @relation("thumbnail", fields: [thumbnailId], references: [id], onDelete: Cascade)
   thumbnailId Int    @map("thumbnail_id")
-  name        String
+  name        String @unique
   bio         String
   detail      String
 
@@ -287,7 +288,7 @@ model Bundle {
   id          Int            @id @default(autoincrement())
   images      Image[]
   reviews     Review[]
-  name        String
+  name        String         @unique
   description String
   details     BundleDetail[]
 
@@ -296,24 +297,25 @@ model Bundle {
 
 model BundleDetail {
   id             Int           @id @default(autoincrement())
-  bundle         Bundle        @relation(fields: [bundleId], references: [id])
+  bundle         Bundle        @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   bundleId       Int           @map("bundle_id")
   price          Decimal
   date           DateTime
-  embarkation    Embarkation   @relation(fields: [embarkationId], references: [id])
+  embarkation    Embarkation   @relation(fields: [embarkationId], references: [id], onDelete: Cascade)
   embarkationId  Int           @map("embarkation_id")
-  roomType       RoomType      @relation(fields: [roomTypeId], references: [id])
+  roomType       RoomType      @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   roomTypeId     Int           @map("room_type_id")
-  makkahHotel    HotelSchedule @relation("makkah", fields: [makkahHotelId], references: [id])
+  makkahHotel    HotelSchedule @relation("makkah", fields: [makkahHotelId], references: [id], onDelete: Cascade)
   makkahHotelId  Int           @unique @map("makkah_hotel_id")
-  madinahHotel   HotelSchedule @relation("madinah", fields: [madinahHotelId], references: [id])
+  madinahHotel   HotelSchedule @relation("madinah", fields: [madinahHotelId], references: [id], onDelete: Cascade)
   madinahHotelId Int           @unique @map("madinah_hotel_id")
-  flight         Flight        @relation(fields: [flightId], references: [id])
+  flight         Flight        @relation(fields: [flightId], references: [id], onDelete: Cascade)
   flightId       Int           @map("flight_id")
-  bus            Bus           @relation(fields: [busId], references: [id])
+  bus            Bus           @relation(fields: [busId], references: [id], onDelete: Cascade)
   busId          Int           @map("bus_id")
   schedules      Schedule[]
   muthowif       Muthowif[]
 
+  @@unique([date, embarkationId, roomTypeId])
   @@map("bundle_details")
 }

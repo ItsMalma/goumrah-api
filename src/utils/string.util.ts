@@ -13,3 +13,10 @@ export function camelCase(str: string): string {
 export function camelCaseFromPascal(str: string): string {
 	return str.charAt(0).toLowerCase() + str.slice(1);
 }
+
+export function pascalCaseToTitle(str: string): string {
+	return str
+		.split(/(?=[A-Z])/)
+		.map((word) => word.toLowerCase())
+		.join(" ");
+}

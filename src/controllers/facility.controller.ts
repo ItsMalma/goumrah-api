@@ -13,7 +13,7 @@ const facilityController = new Hono()
 
 		const output = await FacilityService.instance.create(input);
 
-		return c.json(output, 201);
+		return c.json(output);
 	})
 	.get("", async (c) => {
 		const output = await FacilityService.instance.getAll();
@@ -23,7 +23,7 @@ const facilityController = new Hono()
 	.get("/:id", validate("param", facilityParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await FacilityService.instance.getById(param, true);
+		const output = await FacilityService.instance.get(param);
 
 		return c.json(output);
 	})
@@ -35,7 +35,7 @@ const facilityController = new Hono()
 			const param = c.req.valid("param");
 			const input = c.req.valid("json");
 
-			const output = await FacilityService.instance.update(param, input, true);
+			const output = await FacilityService.instance.update(param, input);
 
 			return c.json(output);
 		},
@@ -43,7 +43,7 @@ const facilityController = new Hono()
 	.delete("/:id", validate("param", facilityParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await FacilityService.instance.delete(param, true);
+		const output = await FacilityService.instance.delete(param);
 
 		return c.json(output);
 	});

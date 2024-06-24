@@ -1,6 +1,6 @@
 import { vValidator } from "@hono/valibot-validator";
 import type { ValidationTargets } from "hono";
-import { flatten, type GenericSchema, type GenericSchemaAsync } from "valibot";
+import { type GenericSchema, type GenericSchemaAsync, flatten } from "valibot";
 
 export function validate<
 	Target extends keyof ValidationTargets,

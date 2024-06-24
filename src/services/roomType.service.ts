@@ -5,12 +5,16 @@ import type {
 	RoomTypeOutput,
 	RoomTypeParam,
 } from "../schemas/roomType.schema";
-import type CRUDService from "./crud.service";
+import CRUDService from "./crud.service";
 
-export default class RoomTypeService
-	implements CRUDService<RoomTypeInput, RoomTypeOutput, RoomTypeParam>
-{
-	private constructor() {}
+export default class RoomTypeService extends CRUDService<
+	RoomTypeInput,
+	RoomTypeOutput,
+	RoomTypeParam
+> {
+	private constructor() {
+		super();
+	}
 
 	async create(input: RoomTypeInput): Promise<RoomTypeOutput> {
 		const roomType = await db.roomType.create({
@@ -26,15 +30,12 @@ export default class RoomTypeService
 		return roomTypes;
 	}
 
-	async getById(
-		param: RoomTypeParam,
-		throwIfNotFound?: boolean,
-	): Promise<RoomTypeOutput | null> {
+	async get(param: RoomTypeParam): Promise<RoomTypeOutput> {
 		const roomType = await db.roomType.findUnique({
 			where: param,
 		});
-		if (!roomType && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!roomType)
+			throw new HTTPException(404, { message: "Jenis ruang tidak ditemukan" });
 
 		return roomType;
 	}
@@ -42,27 +43,23 @@ export default class RoomTypeService
 	async update(
 		param: RoomTypeParam,
 		input: RoomTypeInput,
-		throwIfNotFound?: boolean,
 	): Promise<RoomTypeOutput> {
 		const roomType = await db.roomType.update({
 			where: param,
 			data: input,
 		});
-		if (!roomType && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!roomType)
+			throw new HTTPException(404, { message: "Jenis ruang tidak ditemukan" });
 
 		return roomType;
 	}
 
-	async delete(
-		param: RoomTypeParam,
-		throwIfNotFound?: boolean,
-	): Promise<RoomTypeOutput> {
+	async delete(param: RoomTypeParam): Promise<RoomTypeOutput> {
 		const roomType = await db.roomType.delete({
 			where: param,
 		});
-		if (!roomType && throwIfNotFound)
-			throw new HTTPException(404, { message: "Data tidak ditemukan" });
+		if (!roomType)
+			throw new HTTPException(404, { message: "Jenis ruang tidak ditemukan" });
 
 		return roomType;
 	}

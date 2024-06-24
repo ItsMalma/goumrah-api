@@ -144,6 +144,8 @@ ren .env.example .env
    | POSTGRES_USER | Username untuk database PostgreSQL | postgres |
    | POSTGRES_NAME | Nama database yang akan dipakai | goumrah |
    | DATABASE_URL | URL yang dibentuk dari kelima key di atas untuk digunakan langsung di prisma (Mohon jangan mengubah key yang ini) | **JANGAN DIUBAH!**
+   | PORT | Port dimana aplikasi (server) berjalan | 80 |
+   | FILE_NAME_LENGTH | Panjang nama file yang akan digenerate oleh aplikasi (gambar, dkk) | 10 |
 
 #### 4. Install semua tools yang sudah dituliskan di `docker-compose.yml` dengan menjalankan perintah berikut:
 

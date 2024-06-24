@@ -23,7 +23,7 @@ const roomTypeController = new Hono()
 	.get("/:id", validate("param", roomTypeParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await RoomTypeService.instance.getById(param, true);
+		const output = await RoomTypeService.instance.get(param);
 
 		return c.json(output);
 	})
@@ -35,7 +35,7 @@ const roomTypeController = new Hono()
 			const param = c.req.valid("param");
 			const input = c.req.valid("json");
 
-			const output = await RoomTypeService.instance.update(param, input, true);
+			const output = await RoomTypeService.instance.update(param, input);
 
 			return c.json(output);
 		},
@@ -43,7 +43,7 @@ const roomTypeController = new Hono()
 	.delete("/:id", validate("param", roomTypeParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await RoomTypeService.instance.delete(param, true);
+		const output = await RoomTypeService.instance.delete(param);
 
 		return c.json(output);
 	});

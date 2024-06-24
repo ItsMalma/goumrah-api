@@ -23,7 +23,7 @@ const embarkationController = new Hono()
 	.get("/:id", validate("param", embarkationParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await EmbarkationService.instance.getById(param, true);
+		const output = await EmbarkationService.instance.get(param);
 
 		return c.json(output);
 	})
@@ -35,11 +35,7 @@ const embarkationController = new Hono()
 			const param = c.req.valid("param");
 			const input = c.req.valid("json");
 
-			const output = await EmbarkationService.instance.update(
-				param,
-				input,
-				true,
-			);
+			const output = await EmbarkationService.instance.update(param, input);
 
 			return c.json(output);
 		},
@@ -47,7 +43,7 @@ const embarkationController = new Hono()
 	.delete("/:id", validate("param", embarkationParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await EmbarkationService.instance.delete(param, true);
+		const output = await EmbarkationService.instance.delete(param);
 
 		return c.json(output);
 	});

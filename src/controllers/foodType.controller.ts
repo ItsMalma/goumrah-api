@@ -23,7 +23,7 @@ const foodTypeController = new Hono()
 	.get("/:id", validate("param", foodTypeParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await FoodTypeService.instance.getById(param, true);
+		const output = await FoodTypeService.instance.get(param);
 
 		return c.json(output);
 	})
@@ -35,7 +35,7 @@ const foodTypeController = new Hono()
 			const param = c.req.valid("param");
 			const input = c.req.valid("json");
 
-			const output = await FoodTypeService.instance.update(param, input, true);
+			const output = await FoodTypeService.instance.update(param, input);
 
 			return c.json(output);
 		},
@@ -43,7 +43,7 @@ const foodTypeController = new Hono()
 	.delete("/:id", validate("param", foodTypeParamSchema), async (c) => {
 		const param = c.req.valid("param");
 
-		const output = await FoodTypeService.instance.delete(param, true);
+		const output = await FoodTypeService.instance.delete(param);
 
 		return c.json(output);
 	});

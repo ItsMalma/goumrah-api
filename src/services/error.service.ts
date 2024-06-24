@@ -20,6 +20,8 @@ export default class ErrorService {
 			return [await response.text(), response.status as StatusCode, false];
 		}
 
+		console.error(err);
+
 		return ["Internal Server Error", 500, false];
 	}
 
