@@ -1,7 +1,6 @@
-import { HTTPException } from "hono/http-exception";
 import path from "node:path";
-import db from "../db";
-import type { HotelParam } from "../schemas/hotel.schema";
+import type { DeepPartial, FindOneOptions } from "typeorm";
+import Image from "../entities/image.entity";
 import type {
 	ImageInput,
 	ImageOutput,
@@ -11,81 +10,50 @@ import { fileTypeToExtension, randomFileName } from "../utils/file.util";
 import CRUDService from "./crud.service";
 
 export default class ImageService extends CRUDService<
+	Image,
 	ImageInput,
 	ImageOutput,
 	ImageParam
 > {
 	private constructor() {
-		super();
+		super(Image, "Gambar");
 	}
 
-	async create(input: ImageInput): Promise<ImageOutput> {
-		const fileName = randomFileName(fileTypeToExtension(input.file.type));
-		const filePath = path.join(__dirname, "..", "..", "static", fileName);
-		await Bun.write(filePath, input.file);
+	public async write(file: File): Promise<string> {
+		const fileName = randomFileName(fileTypeToExtension(file.type));
+		await Bun.write(path.join(__dirname, "..", "..", "static", fileName), file);
 
-		const image = await db.image.create({
-			data: {
-				src: fileName,
-				alt: input.alt,
-			},
-		});
-
-		return image;
+		return fileName;
 	}
 
-	async getAll(): Promise<ImageOutput[]> {
-		const images = await db.image.findMany();
+	protected async mapCreate(input: ImageInput): Promise<DeepPartial<Image>> {
+		const fileName = await this.write(input.file);
 
-		return images;
+		return {
+			src: fileName,
+			alt: input.alt,
+		};
 	}
 
-	async get(param: ImageParam): Promise<ImageOutput> {
-		const image = await db.image.findUnique({
-			where: param,
-		});
-		if (!image)
-			throw new HTTPException(404, { message: "Gambar tidak ditemukan" });
+	protected async mapUpdate(old: Image, input: ImageInput): Promise<Image> {
+		const fileName = await this.write(input.file);
 
-		return image;
+		old.src = fileName;
+		old.alt = input.alt;
+
+		return old;
 	}
 
-	async getFromHotel(param: HotelParam): Promise<ImageOutput[]> {
-		const images = await db.image.findMany({
-			where: {
-				hotels: { some: param },
-			},
-		});
-
-		return images;
+	protected mapParam(param: ImageParam): FindOneOptions<Image> {
+		return { where: { id: param.id } };
 	}
 
-	async update(param: ImageParam, input: ImageInput): Promise<ImageOutput> {
-		const fileName = randomFileName(fileTypeToExtension(input.file.type));
-		const filePath = path.join(__dirname, "..", "..", "static", fileName);
-		await Bun.write(filePath, input.file);
-
-		const image = await db.image.update({
-			where: param,
-			data: {
-				src: fileName,
-				alt: input.alt,
-			},
-		});
-		if (!image)
-			throw new HTTPException(404, { message: "Gambar tidak ditemukan" });
-
-		return image;
-	}
-
-	async delete(param: ImageParam): Promise<ImageOutput> {
-		const image = await db.image.delete({
-			where: param,
-		});
-		if (!image)
-			throw new HTTPException(404, { message: "Gambar tidak ditemukan" });
-
-		return image;
+	protected mapOutput(entity: Image): ImageOutput {
+		return {
+			id: entity.id,
+			src: `/${entity.src}`,
+			alt: entity.alt,
+		};
 	}
 
 	private static _instance: ImageService | null = null;

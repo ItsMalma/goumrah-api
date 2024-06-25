@@ -1,5 +1,5 @@
-import { HTTPException } from "hono/http-exception";
-import db from "../db";
+import type { DeepPartial, FindOneOptions } from "typeorm";
+import Embarkation from "../entities/embarkation.entity";
 import type {
 	EmbarkationInput,
 	EmbarkationOutput,
@@ -8,60 +8,30 @@ import type {
 import CRUDService from "./crud.service";
 
 export default class EmbarkationService extends CRUDService<
+	Embarkation,
 	EmbarkationInput,
 	EmbarkationOutput,
 	EmbarkationParam
 > {
 	private constructor() {
-		super();
+		super(Embarkation, "Embarkasi");
 	}
 
-	async create(input: EmbarkationInput): Promise<EmbarkationOutput> {
-		const embarkation = await db.embarkation.create({
-			data: input,
-		});
-
-		return embarkation;
+	protected mapCreate(input: EmbarkationInput): DeepPartial<Embarkation> {
+		return { name: input.name };
 	}
 
-	async getAll(): Promise<EmbarkationOutput[]> {
-		const embarkations = await db.embarkation.findMany();
-
-		return embarkations;
+	protected mapUpdate(old: Embarkation, input: EmbarkationInput): Embarkation {
+		old.name = input.name;
+		return old;
 	}
 
-	async get(param: EmbarkationParam): Promise<EmbarkationOutput> {
-		const embarkation = await db.embarkation.findUnique({
-			where: param,
-		});
-		if (!embarkation)
-			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
-
-		return embarkation;
+	protected mapParam(param: EmbarkationParam): FindOneOptions<Embarkation> {
+		return { where: { id: param.id } };
 	}
 
-	async update(
-		param: EmbarkationParam,
-		input: EmbarkationInput,
-	): Promise<EmbarkationOutput> {
-		const embarkation = await db.embarkation.update({
-			where: param,
-			data: input,
-		});
-		if (!embarkation)
-			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
-
-		return embarkation;
-	}
-
-	async delete(param: EmbarkationParam): Promise<EmbarkationOutput> {
-		const embarkation = await db.embarkation.delete({
-			where: param,
-		});
-		if (!embarkation)
-			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
-
-		return embarkation;
+	protected mapOutput(entity: Embarkation): EmbarkationOutput {
+		return { id: entity.id, name: entity.name };
 	}
 
 	private static _instance: EmbarkationService | null = null;

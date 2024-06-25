@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";

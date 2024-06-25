@@ -1,78 +1,38 @@
-import { HTTPException } from "hono/http-exception";
-import db from "../db";
+import type { DeepPartial, FindOneOptions } from "typeorm";
+import Facility from "../entities/facility.entity";
 import type {
 	FacilityInput,
 	FacilityOutput,
 	FacilityParam,
 } from "../schemas/facility.schema";
-import type { HotelParam } from "../schemas/hotel.schema";
 import CRUDService from "./crud.service";
 
 export default class FacilityService extends CRUDService<
+	Facility,
 	FacilityInput,
 	FacilityOutput,
 	FacilityParam
 > {
 	private constructor() {
-		super();
+		super(Facility, "Fasilitas");
 	}
 
-	async create(input: FacilityInput): Promise<FacilityOutput> {
-		const facility = await db.facility.create({
-			data: input,
-		});
-
-		return facility;
+	protected mapCreate(input: FacilityInput): DeepPartial<Facility> {
+		return { name: input.name, icon: input.icon };
 	}
 
-	async getAll(): Promise<FacilityOutput[]> {
-		const facilities = await db.facility.findMany();
-
-		return facilities;
+	protected mapUpdate(old: Facility, input: FacilityInput): Facility {
+		old.name = input.name;
+		old.icon = input.icon;
+		return old;
 	}
 
-	async get(param: FacilityParam): Promise<FacilityOutput> {
-		const facility = await db.facility.findUnique({
-			where: param,
-		});
-		if (!facility)
-			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
-
-		return facility;
+	protected mapParam(param: FacilityParam): FindOneOptions<Facility> {
+		return { where: { id: param.id } };
 	}
 
-	async getFromHotel(param: HotelParam): Promise<FacilityOutput[]> {
-		const facilities = await db.facility.findMany({
-			where: {
-				hotels: { some: param },
-			},
-		});
-
-		return facilities;
-	}
-
-	async update(
-		param: FacilityParam,
-		input: FacilityInput,
-	): Promise<FacilityOutput> {
-		const facility = await db.facility.update({
-			where: param,
-			data: input,
-		});
-		if (!facility)
-			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
-
-		return facility;
-	}
-
-	async delete(param: FacilityParam): Promise<FacilityOutput> {
-		const facility = await db.facility.delete({
-			where: param,
-		});
-		if (!facility)
-			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
-
-		return facility;
+	protected mapOutput(entity: Facility): FacilityOutput {
+		return { id: entity.id, name: entity.name, icon: entity.icon };
 	}
 
 	private static _instance: FacilityService | null = null;

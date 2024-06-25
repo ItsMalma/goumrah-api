@@ -11,7 +11,7 @@ import {
 import { isNumeric } from "validator";
 import { foodMenuOutputSchema } from "./foodMenu.schema";
 
-export const foodMenuHotelInputSchema = object(
+export const hotelFoodInputSchema = object(
 	{
 		hotel: pipe(
 			number("Harus berupa angka"),
@@ -28,21 +28,21 @@ export const foodMenuHotelInputSchema = object(
 	},
 	"Harus berupa object",
 );
-export type FoodMenuHotelInput = InferOutput<typeof foodMenuHotelInputSchema>;
+export type HotelFoodInput = InferOutput<typeof hotelFoodInputSchema>;
 
-export const foodMenuHotelOutputSchema = object({
+export const hotelFoodOutputSchema = object({
 	id: number(),
 	hotel: number(),
 	foodMenu: foodMenuOutputSchema,
 	amount: number(),
 });
-export type FoodMenuHotelOutput = InferOutput<typeof foodMenuHotelOutputSchema>;
+export type HotelFoodOutput = InferOutput<typeof hotelFoodOutputSchema>;
 
-export const foodMenuHotelParamSchema = object({
+export const hotelFoodParamSchema = object({
 	id: pipe(
 		unknown(),
 		check(isNumeric, "Harus berupa angka"),
 		transform(Number),
 	),
 });
-export type FoodMenuHotelParam = InferOutput<typeof foodMenuHotelParamSchema>;
+export type HotelFoodParam = InferOutput<typeof hotelFoodParamSchema>;

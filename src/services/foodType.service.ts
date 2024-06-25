@@ -1,5 +1,5 @@
-import { HTTPException } from "hono/http-exception";
-import db from "../db";
+import type { DeepPartial, FindOneOptions } from "typeorm";
+import FoodType from "../entities/foodType.entity";
 import type {
 	FoodTypeInput,
 	FoodTypeOutput,
@@ -8,66 +8,30 @@ import type {
 import CRUDService from "./crud.service";
 
 export default class FoodTypeService extends CRUDService<
+	FoodType,
 	FoodTypeInput,
 	FoodTypeOutput,
 	FoodTypeParam
 > {
 	private constructor() {
-		super();
+		super(FoodType, "Jenis Makanan");
 	}
 
-	async create(input: FoodTypeInput): Promise<FoodTypeOutput> {
-		const foodType = await db.foodType.create({
-			data: input,
-		});
-
-		return foodType;
+	protected mapCreate(input: FoodTypeInput): DeepPartial<FoodType> {
+		return { name: input.name };
 	}
 
-	async getAll(): Promise<FoodTypeOutput[]> {
-		const foodTypes = await db.foodType.findMany();
-
-		return foodTypes;
+	protected mapUpdate(old: FoodType, input: FoodTypeInput): FoodType {
+		old.name = input.name;
+		return old;
 	}
 
-	async get(param: FoodTypeParam): Promise<FoodTypeOutput> {
-		const foodType = await db.foodType.findUnique({
-			where: param,
-		});
-		if (!foodType)
-			throw new HTTPException(404, {
-				message: "Jenis makanan tidak ditemukan",
-			});
-
-		return foodType;
+	protected mapParam(param: FoodTypeParam): FindOneOptions<FoodType> {
+		return { where: { id: param.id } };
 	}
 
-	async update(
-		param: FoodTypeParam,
-		input: FoodTypeInput,
-	): Promise<FoodTypeOutput> {
-		const foodType = await db.foodType.update({
-			where: param,
-			data: input,
-		});
-		if (!foodType)
-			throw new HTTPException(404, {
-				message: "Jenis makanan tidak ditemukan",
-			});
-
-		return foodType;
-	}
-
-	async delete(param: FoodTypeParam): Promise<FoodTypeOutput> {
-		const foodType = await db.foodType.delete({
-			where: param,
-		});
-		if (!foodType)
-			throw new HTTPException(404, {
-				message: "Jenis makanan tidak ditemukan",
-			});
-
-		return foodType;
+	protected mapOutput(entity: FoodType): FoodTypeOutput {
+		return { id: entity.id, name: entity.name };
 	}
 
 	private static _instance: FoodTypeService | null = null;

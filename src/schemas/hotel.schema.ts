@@ -1,7 +1,7 @@
 import {
 	array,
 	check,
-	instance,
+	file,
 	mimeType,
 	minLength,
 	minValue,
@@ -20,7 +20,7 @@ import { isJSON, isNumeric } from "validator";
 export const hotelInputSchema = object(
 	{
 		thumbnail: pipe(
-			instance(File, "Harus berupa file"),
+			file("Harus berupa file"),
 			mimeType(["image/png", "image/jpeg"], "Harus berupa gambar"),
 		),
 		rating: pipe(
@@ -40,7 +40,7 @@ export const hotelInputSchema = object(
 		),
 		"images[]": array(
 			pipe(
-				instance(File, "Harus berupa file"),
+				file("Harus berupa file"),
 				mimeType(["image/png", "image/jpeg"], "Harus berupa gambar"),
 			),
 			"Harus berupa array",
@@ -76,13 +76,6 @@ export const hotelInputSchema = object(
 			minValue(1, "Harus lebih dari 0"),
 		),
 		foodType: pipe(
-			string("Harus berupa string"),
-			check(isNumeric, "Harus berupa angka"),
-			transform(Number),
-			number("Harus berupa angka"),
-			minValue(1, "Harus lebih dari 0"),
-		),
-		foodAmount: pipe(
 			string("Harus berupa string"),
 			check(isNumeric, "Harus berupa angka"),
 			transform(Number),

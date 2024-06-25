@@ -1,5 +1,5 @@
-import { HTTPException } from "hono/http-exception";
-import db from "../db";
+import type { DeepPartial, FindOneOptions } from "typeorm";
+import FoodMenu from "../entities/foodMenu.entity";
 import type {
 	FoodMenuInput,
 	FoodMenuOutput,
@@ -8,60 +8,30 @@ import type {
 import CRUDService from "./crud.service";
 
 export default class FoodMenuService extends CRUDService<
+	FoodMenu,
 	FoodMenuInput,
 	FoodMenuOutput,
 	FoodMenuParam
 > {
 	private constructor() {
-		super();
+		super(FoodMenu, "Menu Makanan");
 	}
 
-	async create(input: FoodMenuInput): Promise<FoodMenuOutput> {
-		const foodMenu = await db.foodMenu.create({
-			data: input,
-		});
-
-		return foodMenu;
+	protected mapCreate(input: FoodMenuInput): DeepPartial<FoodMenu> {
+		return { name: input.name };
 	}
 
-	async getAll(): Promise<FoodMenuOutput[]> {
-		const foodMenus = await db.foodMenu.findMany();
-
-		return foodMenus;
+	protected mapUpdate(old: FoodMenu, input: FoodMenuInput): FoodMenu {
+		old.name = input.name;
+		return old;
 	}
 
-	async get(param: FoodMenuParam): Promise<FoodMenuOutput> {
-		const foodMenu = await db.foodMenu.findUnique({
-			where: param,
-		});
-		if (!foodMenu)
-			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
-
-		return foodMenu;
+	protected mapParam(param: FoodMenuParam): FindOneOptions<FoodMenu> {
+		return { where: { id: param.id } };
 	}
 
-	async update(
-		param: FoodMenuParam,
-		input: FoodMenuInput,
-	): Promise<FoodMenuOutput> {
-		const foodMenu = await db.foodMenu.update({
-			where: param,
-			data: input,
-		});
-		if (!foodMenu)
-			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
-
-		return foodMenu;
-	}
-
-	async delete(param: FoodMenuParam): Promise<FoodMenuOutput> {
-		const foodMenu = await db.foodMenu.delete({
-			where: param,
-		});
-		if (!foodMenu)
-			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
-
-		return foodMenu;
+	protected mapOutput(entity: FoodMenu): FoodMenuOutput {
+		return { id: entity.id, name: entity.name };
 	}
 
 	private static _instance: FoodMenuService | null = null;

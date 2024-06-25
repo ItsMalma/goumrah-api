@@ -1,6 +1,9 @@
-import type { Hotel } from "@prisma/client";
 import { HTTPException } from "hono/http-exception";
-import db from "../db";
+import type { DeepPartial, FindOneOptions } from "typeorm";
+import dataSource from "../data-source";
+import FoodMenu from "../entities/foodMenu.entity";
+import Hotel from "../entities/hotel.entity";
+import HotelFood from "../entities/hotelFood.entity";
 import type {
 	HotelInput,
 	HotelOutput,
@@ -8,11 +11,13 @@ import type {
 } from "../schemas/hotel.schema";
 import CRUDService from "./crud.service";
 import FacilityService from "./facility.service";
-import FoodMenuHotelService from "./foodMenuHotel.service";
+import HotelFoodService from "./foodHotel.service";
+import FoodMenuService from "./foodMenu.service";
 import FoodTypeService from "./foodType.service";
 import ImageService from "./image.service";
 
 export default class HotelService extends CRUDService<
+	Hotel,
 	HotelInput,
 	HotelOutput,
 	HotelParam
@@ -21,187 +26,197 @@ export default class HotelService extends CRUDService<
 		private imageService = ImageService.instance,
 		private facilityService = FacilityService.instance,
 		private foodTypeService = FoodTypeService.instance,
-		private foodMenuHotelService = FoodMenuHotelService.instance,
+		private foodMenuRepository = dataSource.getRepository(FoodMenu),
+		private foodMenuService = FoodMenuService.instance,
+		private hotelFoodRepository = dataSource.getRepository(HotelFood),
+		private hotelFoodService = HotelFoodService.instance,
 	) {
-		super();
+		super(Hotel, "Hotel", {
+			images: {},
+			thumbnail: {},
+			facilities: {},
+			foodType: {},
+			foods: {
+				foodMenu: true,
+			},
+		});
 	}
 
-	async map(hotel: Hotel): Promise<HotelOutput> {
-		const thumbnail = await this.imageService.get({ id: hotel.thumbnailId });
-		const images = await this.imageService.getFromHotel(hotel);
-		const facilities = await this.facilityService.getFromHotel(hotel);
-		const foodType = await this.foodTypeService.get({ id: hotel.foodTypeId });
-		const foodMenusHotel = await this.foodMenuHotelService.getFromHotel(hotel);
+	protected async mapCreate(input: HotelInput): Promise<DeepPartial<Hotel>> {
+		const thumbnail = await this.imageService.create({
+			file: input.thumbnail,
+			alt: `Thumbnail Hotel ${input.name}`,
+		});
+
+		const images = [];
+		for (const inputImage of input["images[]"]) {
+			const imageOutput = await this.imageService.create({
+				file: inputImage,
+				alt: `Gambar Hotel ${input.name}`,
+			});
+
+			images.push({
+				id: imageOutput.id,
+			});
+		}
+
+		const facilities = await this.facilityService.getMany(
+			input.facilities.map((inputFacility) => ({ id: inputFacility })),
+		);
+
+		const foodType = await this.foodTypeService.get({
+			id: input.foodType,
+		});
+
+		const foods: DeepPartial<HotelFood>[] = [];
+		for (const inputFoodMenu of input.foodMenus) {
+			const foodMenu = await this.foodMenuService.get({
+				id: inputFoodMenu.id,
+			});
+
+			foods.push({
+				foodMenu,
+				amount: inputFoodMenu.amount,
+			});
+		}
 
 		return {
-			id: hotel.id,
-			thumbnail: thumbnail.src,
-			rating: hotel.rating,
-			name: hotel.name,
-			helpLink: hotel.helpLink,
-			images: images.map((image) => image.src),
-			description: hotel.description,
+			thumbnail,
+			rating: input.rating,
+			name: input.name,
+			helpLink: input.helpLink,
+			images,
+			description: input.description,
 			facilities,
-			mapLink: hotel.mapLink,
-			address: hotel.address,
-			distance: hotel.distance,
-			foodType: foodType.name,
-			foodAmount: hotel.foodAmount,
-			foodMenus: foodMenusHotel.map((foodMenuHotel) => ({
-				amount: foodMenuHotel.amount,
-				name: foodMenuHotel.foodMenu.name,
-			})),
-			reviewLink: hotel.reviewLink,
+			mapLink: input.mapLink,
+			address: input.address,
+			distance: input.distance,
+			foodType: foodType,
+			foods,
+			reviewLink: input.reviewLink,
 		};
 	}
 
-	async create(input: HotelInput): Promise<HotelOutput> {
+	protected async mapUpdate(
+		old: Hotel,
+		input: HotelInput,
+	): Promise<DeepPartial<Hotel>> {
 		const thumbnail = await this.imageService.create({
 			file: input.thumbnail,
-			alt: `${input.name}'s thumbnail`,
+			alt: `Thumbnail Hotel ${input.name}`,
 		});
 
-		const images = await this.imageService.createMany(
-			input["images[]"].map((inputImage) => ({
+		const images = [];
+		for (const inputImage of input["images[]"]) {
+			const imageOutput = await this.imageService.create({
 				file: inputImage,
 				alt: `Gambar Hotel ${input.name}`,
-			})),
-		);
+			});
+
+			images.push({
+				id: imageOutput.id,
+			});
+		}
 
 		const facilities = await this.facilityService.getMany(
-			input.facilities.map((facility) => ({ id: facility })),
+			input.facilities.map((inputFacility) => ({ id: inputFacility })),
 		);
 
-		const foodType = await this.foodTypeService.get({ id: input.foodType });
-
-		const hotel = await db.hotel.create({
-			data: {
-				...{
-					...input,
-					"images[]": undefined,
-				},
-				thumbnail: { connect: thumbnail },
-				images: { connect: images },
-				facilities: { connect: facilities },
-				foodType: { connect: foodType },
-				foodMenus: {},
-			},
+		const foodType = await this.foodTypeService.get({
+			id: input.foodType,
 		});
 
-		await this.foodMenuHotelService.createMany(
-			input.foodMenus.map((foodMenu) => ({
-				hotel: hotel.id,
-				foodMenu: foodMenu.id,
-				amount: foodMenu.amount,
-			})),
-		);
+		const foods: DeepPartial<HotelFood>[] = [];
+		for (const inputFoodMenu of input.foodMenus) {
+			const foodMenu = await this.foodMenuService.get({
+				id: inputFoodMenu.id,
+			});
 
-		return await this.map(hotel);
+			foods.push({
+				foodMenu,
+				amount: inputFoodMenu.amount,
+			});
+		}
+
+		const _new: DeepPartial<Hotel> = old;
+		_new.id = old.id;
+		_new.thumbnail = thumbnail;
+		_new.rating = input.rating;
+		_new.name = input.name;
+		_new.helpLink = input.helpLink;
+		_new.images = images;
+		_new.description = input.description;
+		_new.facilities = facilities;
+		_new.mapLink = input.mapLink;
+		_new.address = input.address;
+		_new.distance = input.distance;
+		_new.foodType = foodType;
+		_new.foods = foods;
+		_new.reviewLink = input.reviewLink;
+
+		return _new;
 	}
 
-	async getAll(): Promise<HotelOutput[]> {
-		const hotels = await db.hotel.findMany();
-
-		return await Promise.all(hotels.map(this.map.bind(this)));
-	}
-
-	async get(param: HotelParam): Promise<HotelOutput> {
-		const hotel = await db.hotel.findUnique({
-			where: param,
-		});
-		if (!hotel)
-			throw new HTTPException(404, { message: "Hotel tidak ditemukan" });
-
-		return await this.map(hotel);
-	}
-
-	async update(
+	public async update(
 		param: HotelParam,
 		input: HotelInput,
-		throwIfNotFound?: boolean,
 	): Promise<HotelOutput> {
-		const thumbnail = await this.imageService.create({
-			file: input.thumbnail,
-			alt: `${input.name}'s thumbnail`,
+		const output = await super.update(param, input);
+
+		const oldHotelFoods = await this.hotelFoodRepository.find({
+			where: { hotel: { id: output.id } },
 		});
+		for (const oldHotelFood of oldHotelFoods) {
+			await this.hotelFoodService.delete({ id: oldHotelFood.id });
+		}
 
-		const images = await this.imageService.createMany(
-			input["images[]"].map((inputImage) => ({
-				file: inputImage,
-				alt: `Gambar Hotel ${input.name}`,
-			})),
-		);
+		for (const newHotelFood of output.foodMenus) {
+			const foodMenu = await this.foodMenuRepository.findOne({
+				where: { name: newHotelFood.name },
+			});
+			if (!foodMenu) {
+				throw new HTTPException(400, {
+					message: "Menu Makanan tidak ditemukan",
+				});
+			}
 
-		const facilities = await this.facilityService.getMany(
-			input.facilities.map((facility) => ({ id: facility })),
-		);
-
-		const foodType = await this.foodTypeService.get({ id: input.foodType });
-
-		const hotel = await db.hotel.update({
-			where: param,
-			data: {
-				...{
-					...input,
-					"images[]": undefined,
-				},
-				thumbnail: { connect: thumbnail },
-				images: { set: images },
-				facilities: { set: facilities },
-				foodType: { connect: foodType },
-				foodMenus: { deleteMany: {} },
-			},
-		});
-		if (!hotel && throwIfNotFound)
-			throw new HTTPException(404, { message: "Hotel tidak ditemukan" });
-
-		await this.foodMenuHotelService.createMany(
-			input.foodMenus.map((foodMenu) => ({
-				hotel: hotel.id,
+			await this.hotelFoodService.create({
+				hotel: output.id,
 				foodMenu: foodMenu.id,
-				amount: foodMenu.amount,
-			})),
-		);
+				amount: newHotelFood.amount,
+			});
+		}
 
-		return await this.map(hotel);
+		return output;
 	}
 
-	async delete(
-		param: HotelParam,
-		throwIfNotFound?: boolean,
-	): Promise<HotelOutput> {
-		const hotel = await db.$transaction(async (tx) => {
-			await tx.foodMenuHotel.deleteMany({
-				where: {
-					hotelId: param.id,
-				},
-			});
+	protected mapParam(param: HotelParam): FindOneOptions<Hotel> {
+		return { where: { id: param.id } };
+	}
 
-			const hotel = await tx.hotel.delete({
-				where: param,
-			});
-			if (!hotel && throwIfNotFound)
-				throw new HTTPException(404, { message: "Hotel tidak ditemukan" });
+	protected mapOutput(entity: Hotel): HotelOutput {
+		console.log(entity);
 
-			await tx.image.deleteMany({
-				where: {
-					hotels: {
-						every: {
-							id: param.id,
-						},
-					},
-					hotelsThumbnail: {
-						every: {
-							id: param.id,
-						},
-					},
-				},
-			});
-
-			return hotel;
-		});
-
-		return await this.map(hotel);
+		return {
+			id: entity.id,
+			thumbnail: entity.thumbnail.src,
+			rating: entity.rating,
+			name: entity.name,
+			helpLink: entity.helpLink,
+			images: entity.images.map((image) => image.src),
+			description: entity.description,
+			facilities: entity.facilities,
+			mapLink: entity.mapLink,
+			address: entity.address,
+			distance: entity.distance,
+			foodType: entity.foodType.name,
+			foodAmount: entity.foodAmount,
+			foodMenus: entity.foods.map((food) => ({
+				name: food.foodMenu.name,
+				amount: food.amount,
+			})),
+			reviewLink: entity.reviewLink,
+		};
 	}
 
 	private static _instance: HotelService | null = null;

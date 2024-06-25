@@ -143,7 +143,6 @@ ren .env.example .env
    | POSTGRES_PASS | Password untuk database PostgreSQL | sayatampan |
    | POSTGRES_USER | Username untuk database PostgreSQL | postgres |
    | POSTGRES_NAME | Nama database yang akan dipakai | goumrah |
-   | DATABASE_URL | URL yang dibentuk dari kelima key di atas untuk digunakan langsung di prisma (Mohon jangan mengubah key yang ini) | **JANGAN DIUBAH!**
    | PORT | Port dimana aplikasi (server) berjalan | 80 |
    | FILE_NAME_LENGTH | Panjang nama file yang akan digenerate oleh aplikasi (gambar, dkk) | 10 |
 
@@ -153,9 +152,9 @@ ren .env.example .env
 docker compose up -d
 ```
 
-#### 5. Jalankan migrasi pada database dengan schema yang telah dibuat menggunakan Prisma. Jalankan perintah berikut:
+#### 5. Jalankan migrasi pada database dengan schema yang telah dibuat menggunakan TypeORM. Jalankan perintah berikut:
 ```bat
-bunx prisma db push
+bun typeorm migration:run -d src/data-source.ts
 ```
 
 ### C. Jalankan
