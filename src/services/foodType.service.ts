@@ -24,12 +24,6 @@ export default class FoodTypeService extends CRUDService<
 		return foodType;
 	}
 
-	async getAll(): Promise<FoodTypeOutput[]> {
-		const foodTypes = await db.foodType.findMany();
-
-		return foodTypes;
-	}
-
 	async get(param: FoodTypeParam): Promise<FoodTypeOutput> {
 		const foodType = await db.foodType.findUnique({
 			where: param,
@@ -40,6 +34,12 @@ export default class FoodTypeService extends CRUDService<
 			});
 
 		return foodType;
+	}
+
+	async getAll(): Promise<FoodTypeOutput[]> {
+		const foodTypes = await db.foodType.findMany();
+
+		return foodTypes;
 	}
 
 	async update(

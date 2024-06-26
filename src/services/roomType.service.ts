@@ -1,5 +1,5 @@
-import { HTTPException } from "hono/http-exception";
-import db from "../db";
+import type { DeepPartial, FindOneOptions } from "typeorm";
+import RoomType from "../entities/roomType.entity";
 import type {
 	RoomTypeInput,
 	RoomTypeOutput,
@@ -8,60 +8,30 @@ import type {
 import CRUDService from "./crud.service";
 
 export default class RoomTypeService extends CRUDService<
+	RoomType,
 	RoomTypeInput,
 	RoomTypeOutput,
 	RoomTypeParam
 > {
 	private constructor() {
-		super();
+		super(RoomType, "Tipe Kamar");
 	}
 
-	async create(input: RoomTypeInput): Promise<RoomTypeOutput> {
-		const roomType = await db.roomType.create({
-			data: input,
-		});
-
-		return roomType;
+	protected mapCreate(input: RoomTypeInput): DeepPartial<RoomType> {
+		return { name: input.name };
 	}
 
-	async getAll(): Promise<RoomTypeOutput[]> {
-		const roomTypes = await db.roomType.findMany();
-
-		return roomTypes;
+	protected mapUpdate(old: RoomType, input: RoomTypeInput): RoomType {
+		old.name = input.name;
+		return old;
 	}
 
-	async get(param: RoomTypeParam): Promise<RoomTypeOutput> {
-		const roomType = await db.roomType.findUnique({
-			where: param,
-		});
-		if (!roomType)
-			throw new HTTPException(404, { message: "Jenis ruang tidak ditemukan" });
-
-		return roomType;
+	protected mapParam(param: RoomTypeParam): FindOneOptions<RoomType> {
+		return { where: { id: param.id } };
 	}
 
-	async update(
-		param: RoomTypeParam,
-		input: RoomTypeInput,
-	): Promise<RoomTypeOutput> {
-		const roomType = await db.roomType.update({
-			where: param,
-			data: input,
-		});
-		if (!roomType)
-			throw new HTTPException(404, { message: "Jenis ruang tidak ditemukan" });
-
-		return roomType;
-	}
-
-	async delete(param: RoomTypeParam): Promise<RoomTypeOutput> {
-		const roomType = await db.roomType.delete({
-			where: param,
-		});
-		if (!roomType)
-			throw new HTTPException(404, { message: "Jenis ruang tidak ditemukan" });
-
-		return roomType;
+	protected mapOutput(entity: RoomType): RoomTypeOutput {
+		return { id: entity.id, name: entity.name };
 	}
 
 	private static _instance: RoomTypeService | null = null;

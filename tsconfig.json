@@ -1,7 +1,11 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "jsxImportSource": "hono/jsx",
-    "esModuleInterop": true,
-  }
+	"compilerOptions": {
+		"strictPropertyInitialization": false,
+		"strict": true,
+		"jsxImportSource": "hono/jsx",
+		"esModuleInterop": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"lib": ["ES6"]
+	}
 }

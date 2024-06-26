@@ -16,7 +16,7 @@ export default class FoodMenuService extends CRUDService<
 		super();
 	}
 
-	async create(input: FoodMenuInput): Promise<FoodMenuOutput> {
+	public async create(input: FoodMenuInput): Promise<FoodMenuOutput> {
 		const foodMenu = await db.foodMenu.create({
 			data: input,
 		});
@@ -51,9 +51,7 @@ export default class FoodMenuService extends CRUDService<
 			data: input,
 		});
 		if (!foodMenu)
-			throw new HTTPException(404, {
-				message: `Menu makanan dengan id ${param.id} tidak ditemukan`,
-			});
+			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
 
 		return foodMenu;
 	}
@@ -63,9 +61,7 @@ export default class FoodMenuService extends CRUDService<
 			where: param,
 		});
 		if (!foodMenu)
-			throw new HTTPException(404, {
-				message: `Menu makanan dengan id ${param.id} tidak ditemukan`,
-			});
+			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
 
 		return foodMenu;
 	}

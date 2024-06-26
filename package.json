@@ -2,7 +2,8 @@
   "name": "goumrah",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "gen": "bun run generate/index.ts"
+    "gen": "bun run generate/index.ts",
+    "typeorm": "bun run -b node_modules/typeorm/cli.js "
   },
   "dependencies": {
     "@hono/valibot-validator": "^0.3.0",

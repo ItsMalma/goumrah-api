@@ -5,7 +5,6 @@ import type {
 	FacilityOutput,
 	FacilityParam,
 } from "../schemas/facility.schema";
-import type { HotelParam } from "../schemas/hotel.schema";
 import CRUDService from "./crud.service";
 
 export default class FacilityService extends CRUDService<
@@ -36,21 +35,9 @@ export default class FacilityService extends CRUDService<
 			where: param,
 		});
 		if (!facility)
-			throw new HTTPException(404, {
-				message: `Fasilitas dengan id ${param.id} tidak ditemukan`,
-			});
+			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
 
 		return facility;
-	}
-
-	async getFromHotel(param: HotelParam): Promise<FacilityOutput[]> {
-		const facilities = await db.facility.findMany({
-			where: {
-				hotels: { some: param },
-			},
-		});
-
-		return facilities;
 	}
 
 	async update(
@@ -62,9 +49,7 @@ export default class FacilityService extends CRUDService<
 			data: input,
 		});
 		if (!facility)
-			throw new HTTPException(404, {
-				message: `Fasilitas dengan id ${param.id} tidak ditemukan`,
-			});
+			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
 
 		return facility;
 	}
@@ -74,9 +59,7 @@ export default class FacilityService extends CRUDService<
 			where: param,
 		});
 		if (!facility)
-			throw new HTTPException(404, {
-				message: `Fasilitas dengan id ${param.id} tidak ditemukan`,
-			});
+			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
 
 		return facility;
 	}

@@ -1,6 +1,7 @@
 import {
+	type InferOutput,
 	check,
-	instance,
+	file,
 	mimeType,
 	minLength,
 	nullable,
@@ -10,14 +11,13 @@ import {
 	string,
 	transform,
 	unknown,
-	type InferOutput,
 } from "valibot";
 import { isNumeric } from "validator";
 
 export const imageInputSchema = object(
 	{
 		file: pipe(
-			instance(File, "Harus berupa file"),
+			file("Harus berupa file"),
 			mimeType(["image/png", "image/jpeg"], "Harus berupa gambar"),
 		),
 		alt: nullable(
