@@ -36,7 +36,9 @@ export default class FacilityService extends CRUDService<
 			where: param,
 		});
 		if (!facility)
-			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Fasilitas dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return facility;
 	}
@@ -60,7 +62,9 @@ export default class FacilityService extends CRUDService<
 			data: input,
 		});
 		if (!facility)
-			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Fasilitas dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return facility;
 	}
@@ -70,7 +74,9 @@ export default class FacilityService extends CRUDService<
 			where: param,
 		});
 		if (!facility)
-			throw new HTTPException(404, { message: "Fasilitas tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Fasilitas dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return facility;
 	}

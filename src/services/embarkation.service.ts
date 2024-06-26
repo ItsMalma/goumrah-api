@@ -35,7 +35,9 @@ export default class EmbarkationService extends CRUDService<
 			where: param,
 		});
 		if (!embarkation)
-			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Embarkasi dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return embarkation;
 	}
@@ -49,7 +51,9 @@ export default class EmbarkationService extends CRUDService<
 			data: input,
 		});
 		if (!embarkation)
-			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Embarkasi dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return embarkation;
 	}
@@ -59,7 +63,9 @@ export default class EmbarkationService extends CRUDService<
 			where: param,
 		});
 		if (!embarkation)
-			throw new HTTPException(404, { message: "Embarkasi tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Embarkasi dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return embarkation;
 	}

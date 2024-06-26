@@ -155,7 +155,7 @@ docker compose up -d
 
 #### 5. Jalankan migrasi pada database dengan schema yang telah dibuat menggunakan Prisma. Jalankan perintah berikut:
 ```bat
-bunx prisma db push
+bun prisma db push
 ```
 
 ### C. Jalankan

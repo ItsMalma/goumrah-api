@@ -58,13 +58,13 @@ CREATE TABLE "food_menus" (
 );
 
 -- CreateTable
-CREATE TABLE "food_menu_hotels" (
+CREATE TABLE "hotel_menus" (
     "id" SERIAL NOT NULL,
     "amount" INTEGER NOT NULL,
     "food_menu_id" INTEGER NOT NULL,
     "hotel_id" INTEGER NOT NULL,
 
-    CONSTRAINT "food_menu_hotels_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "hotel_menus_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -79,7 +79,6 @@ CREATE TABLE "hotels" (
     "address" TEXT NOT NULL,
     "distance" INTEGER NOT NULL,
     "food_type_id" INTEGER NOT NULL,
-    "foodAmount" INTEGER NOT NULL,
     "reviewLink" TEXT NOT NULL,
 
     CONSTRAINT "hotels_pkey" PRIMARY KEY ("id")
@@ -93,16 +92,6 @@ CREATE TABLE "hotel_schedules" (
     "checkOut" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "hotel_schedules_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "airline_certificates" (
-    "id" SERIAL NOT NULL,
-    "image_id" INTEGER NOT NULL,
-    "name" TEXT NOT NULL,
-    "color" TEXT NOT NULL,
-
-    CONSTRAINT "airline_certificates_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -258,12 +247,6 @@ CREATE TABLE "_AirlineToImage" (
 );
 
 -- CreateTable
-CREATE TABLE "_AirlineToAirlineCertificate" (
-    "A" INTEGER NOT NULL,
-    "B" INTEGER NOT NULL
-);
-
--- CreateTable
 CREATE TABLE "_BundleToImage" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL
@@ -274,6 +257,39 @@ CREATE TABLE "_BundleDetailToMuthowif" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "images_src_key" ON "images"("src");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "embarkations_name_key" ON "embarkations"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "room_types_name_key" ON "room_types"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "facilities_name_key" ON "facilities"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "food_types_name_key" ON "food_types"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "food_menus_name_key" ON "food_menus"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "hotel_menus_food_menu_id_hotel_id_key" ON "hotel_menus"("food_menu_id", "hotel_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "hotels_name_key" ON "hotels"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "airlines_name_key" ON "airlines"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "airports_name_key" ON "airports"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "airports_code_key" ON "airports"("code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "flight_schedules_take_off_id_key" ON "flight_schedules"("take_off_id");
@@ -294,16 +310,28 @@ CREATE UNIQUE INDEX "flights_outbound_id_key" ON "flights"("outbound_id");
 CREATE UNIQUE INDEX "flights_inbound_id_key" ON "flights"("inbound_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "buses_name_key" ON "buses"("name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "agendas_next_id_key" ON "agendas"("next_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "schedules_day_bundle_detail_id_key" ON "schedules"("day", "bundle_detail_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "muthowif_name_key" ON "muthowif"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "bundles_name_key" ON "bundles"("name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "bundle_details_makkah_hotel_id_key" ON "bundle_details"("makkah_hotel_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "bundle_details_madinah_hotel_id_key" ON "bundle_details"("madinah_hotel_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "bundle_details_date_embarkation_id_room_type_id_key" ON "bundle_details"("date", "embarkation_id", "room_type_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_FacilityToHotel_AB_unique" ON "_FacilityToHotel"("A", "B");
@@ -324,12 +352,6 @@ CREATE UNIQUE INDEX "_AirlineToImage_AB_unique" ON "_AirlineToImage"("A", "B");
 CREATE INDEX "_AirlineToImage_B_index" ON "_AirlineToImage"("B");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "_AirlineToAirlineCertificate_AB_unique" ON "_AirlineToAirlineCertificate"("A", "B");
-
--- CreateIndex
-CREATE INDEX "_AirlineToAirlineCertificate_B_index" ON "_AirlineToAirlineCertificate"("B");
-
--- CreateIndex
 CREATE UNIQUE INDEX "_BundleToImage_AB_unique" ON "_BundleToImage"("A", "B");
 
 -- CreateIndex
@@ -342,91 +364,88 @@ CREATE UNIQUE INDEX "_BundleDetailToMuthowif_AB_unique" ON "_BundleDetailToMutho
 CREATE INDEX "_BundleDetailToMuthowif_B_index" ON "_BundleDetailToMuthowif"("B");
 
 -- AddForeignKey
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_bundle_id_fkey" FOREIGN KEY ("bundle_id") REFERENCES "bundles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_bundle_id_fkey" FOREIGN KEY ("bundle_id") REFERENCES "bundles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "food_menu_hotels" ADD CONSTRAINT "food_menu_hotels_food_menu_id_fkey" FOREIGN KEY ("food_menu_id") REFERENCES "food_menus"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "hotel_menus" ADD CONSTRAINT "hotel_menus_food_menu_id_fkey" FOREIGN KEY ("food_menu_id") REFERENCES "food_menus"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "food_menu_hotels" ADD CONSTRAINT "food_menu_hotels_hotel_id_fkey" FOREIGN KEY ("hotel_id") REFERENCES "hotels"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "hotel_menus" ADD CONSTRAINT "hotel_menus_hotel_id_fkey" FOREIGN KEY ("hotel_id") REFERENCES "hotels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "hotels" ADD CONSTRAINT "hotels_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "hotels" ADD CONSTRAINT "hotels_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "hotels" ADD CONSTRAINT "hotels_food_type_id_fkey" FOREIGN KEY ("food_type_id") REFERENCES "food_types"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "hotels" ADD CONSTRAINT "hotels_food_type_id_fkey" FOREIGN KEY ("food_type_id") REFERENCES "food_types"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "hotel_schedules" ADD CONSTRAINT "hotel_schedules_hotel_id_fkey" FOREIGN KEY ("hotel_id") REFERENCES "hotels"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "hotel_schedules" ADD CONSTRAINT "hotel_schedules_hotel_id_fkey" FOREIGN KEY ("hotel_id") REFERENCES "hotels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "airline_certificates" ADD CONSTRAINT "airline_certificates_image_id_fkey" FOREIGN KEY ("image_id") REFERENCES "images"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "airlines" ADD CONSTRAINT "airlines_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "airlines" ADD CONSTRAINT "airlines_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "flight_events" ADD CONSTRAINT "flight_events_airport_id_fkey" FOREIGN KEY ("airport_id") REFERENCES "airports"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flight_events" ADD CONSTRAINT "flight_events_airport_id_fkey" FOREIGN KEY ("airport_id") REFERENCES "airports"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "transits" ADD CONSTRAINT "transits_airport_id_fkey" FOREIGN KEY ("airport_id") REFERENCES "airports"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "transits" ADD CONSTRAINT "transits_airport_id_fkey" FOREIGN KEY ("airport_id") REFERENCES "airports"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_take_off_id_fkey" FOREIGN KEY ("take_off_id") REFERENCES "flight_events"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_take_off_id_fkey" FOREIGN KEY ("take_off_id") REFERENCES "flight_events"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_landing_id_fkey" FOREIGN KEY ("landing_id") REFERENCES "flight_events"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_landing_id_fkey" FOREIGN KEY ("landing_id") REFERENCES "flight_events"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_transit_id_fkey" FOREIGN KEY ("transit_id") REFERENCES "transits"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_transit_id_fkey" FOREIGN KEY ("transit_id") REFERENCES "transits"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_next_id_fkey" FOREIGN KEY ("next_id") REFERENCES "flight_schedules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flight_schedules" ADD CONSTRAINT "flight_schedules_next_id_fkey" FOREIGN KEY ("next_id") REFERENCES "flight_schedules"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "flights" ADD CONSTRAINT "flights_airline_id_fkey" FOREIGN KEY ("airline_id") REFERENCES "airlines"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flights" ADD CONSTRAINT "flights_airline_id_fkey" FOREIGN KEY ("airline_id") REFERENCES "airlines"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "flights" ADD CONSTRAINT "flights_outbound_id_fkey" FOREIGN KEY ("outbound_id") REFERENCES "flight_schedules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flights" ADD CONSTRAINT "flights_outbound_id_fkey" FOREIGN KEY ("outbound_id") REFERENCES "flight_schedules"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "flights" ADD CONSTRAINT "flights_inbound_id_fkey" FOREIGN KEY ("inbound_id") REFERENCES "flight_schedules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flights" ADD CONSTRAINT "flights_inbound_id_fkey" FOREIGN KEY ("inbound_id") REFERENCES "flight_schedules"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "buses" ADD CONSTRAINT "buses_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "buses" ADD CONSTRAINT "buses_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "agendas" ADD CONSTRAINT "agendas_schedule_id_fkey" FOREIGN KEY ("schedule_id") REFERENCES "schedules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "agendas" ADD CONSTRAINT "agendas_schedule_id_fkey" FOREIGN KEY ("schedule_id") REFERENCES "schedules"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "agendas" ADD CONSTRAINT "agendas_next_id_fkey" FOREIGN KEY ("next_id") REFERENCES "agendas"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "agendas" ADD CONSTRAINT "agendas_next_id_fkey" FOREIGN KEY ("next_id") REFERENCES "agendas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "schedules" ADD CONSTRAINT "schedules_bundle_detail_id_fkey" FOREIGN KEY ("bundle_detail_id") REFERENCES "bundle_details"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "schedules" ADD CONSTRAINT "schedules_bundle_detail_id_fkey" FOREIGN KEY ("bundle_detail_id") REFERENCES "bundle_details"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "muthowif" ADD CONSTRAINT "muthowif_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "muthowif" ADD CONSTRAINT "muthowif_thumbnail_id_fkey" FOREIGN KEY ("thumbnail_id") REFERENCES "images"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_bundle_id_fkey" FOREIGN KEY ("bundle_id") REFERENCES "bundles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_bundle_id_fkey" FOREIGN KEY ("bundle_id") REFERENCES "bundles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_embarkation_id_fkey" FOREIGN KEY ("embarkation_id") REFERENCES "embarkations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_embarkation_id_fkey" FOREIGN KEY ("embarkation_id") REFERENCES "embarkations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_room_type_id_fkey" FOREIGN KEY ("room_type_id") REFERENCES "room_types"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_room_type_id_fkey" FOREIGN KEY ("room_type_id") REFERENCES "room_types"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_makkah_hotel_id_fkey" FOREIGN KEY ("makkah_hotel_id") REFERENCES "hotel_schedules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_makkah_hotel_id_fkey" FOREIGN KEY ("makkah_hotel_id") REFERENCES "hotel_schedules"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_madinah_hotel_id_fkey" FOREIGN KEY ("madinah_hotel_id") REFERENCES "hotel_schedules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_madinah_hotel_id_fkey" FOREIGN KEY ("madinah_hotel_id") REFERENCES "hotel_schedules"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_flight_id_fkey" FOREIGN KEY ("flight_id") REFERENCES "flights"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_flight_id_fkey" FOREIGN KEY ("flight_id") REFERENCES "flights"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_bus_id_fkey" FOREIGN KEY ("bus_id") REFERENCES "buses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "bundle_details" ADD CONSTRAINT "bundle_details_bus_id_fkey" FOREIGN KEY ("bus_id") REFERENCES "buses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_FacilityToHotel" ADD CONSTRAINT "_FacilityToHotel_A_fkey" FOREIGN KEY ("A") REFERENCES "facilities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -445,12 +464,6 @@ ALTER TABLE "_AirlineToImage" ADD CONSTRAINT "_AirlineToImage_A_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "_AirlineToImage" ADD CONSTRAINT "_AirlineToImage_B_fkey" FOREIGN KEY ("B") REFERENCES "images"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_AirlineToAirlineCertificate" ADD CONSTRAINT "_AirlineToAirlineCertificate_A_fkey" FOREIGN KEY ("A") REFERENCES "airlines"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_AirlineToAirlineCertificate" ADD CONSTRAINT "_AirlineToAirlineCertificate_B_fkey" FOREIGN KEY ("B") REFERENCES "airline_certificates"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_BundleToImage" ADD CONSTRAINT "_BundleToImage_A_fkey" FOREIGN KEY ("A") REFERENCES "bundles"("id") ON DELETE CASCADE ON UPDATE CASCADE;

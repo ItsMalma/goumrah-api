@@ -1,15 +1,14 @@
-import type { Hotel } from "@prisma/client";
 import { HTTPException } from "hono/http-exception";
 import db from "../db";
 import type {
+	HotelImagesInput,
 	HotelInput,
 	HotelOutput,
 	HotelParam,
+	HotelThumbnailInput,
 } from "../schemas/hotel.schema";
+import type { ImageOutput } from "../schemas/image.schema";
 import CRUDService from "./crud.service";
-import FacilityService from "./facility.service";
-import FoodMenuHotelService from "./foodMenuHotel.service";
-import FoodTypeService from "./foodType.service";
 import ImageService from "./image.service";
 
 export default class HotelService extends CRUDService<
@@ -18,190 +17,506 @@ export default class HotelService extends CRUDService<
 	HotelParam
 > {
 	private constructor(
-		private imageService = ImageService.instance,
-		private facilityService = FacilityService.instance,
-		private foodTypeService = FoodTypeService.instance,
-		private foodMenuHotelService = FoodMenuHotelService.instance,
+		private readonly imageService: ImageService = ImageService.instance,
 	) {
 		super();
 	}
 
-	async map(hotel: Hotel): Promise<HotelOutput> {
-		const thumbnail = await this.imageService.get({ id: hotel.thumbnailId });
-		const images = await this.imageService.getFromHotel(hotel);
-		const facilities = await this.facilityService.getFromHotel(hotel);
-		const foodType = await this.foodTypeService.get({ id: hotel.foodTypeId });
-		const foodMenusHotel = await this.foodMenuHotelService.getFromHotel(hotel);
+	async create(input: HotelInput): Promise<HotelOutput> {
+		const facilities = await Promise.all(
+			input.facilities.map(async (facilityId) => {
+				const facility = await db.facility.findFirst({
+					where: { id: facilityId },
+				});
+				if (!facility)
+					throw new HTTPException(404, {
+						message: `Fasilitas dengan id ${facilityId} tidak ditemukan`,
+					});
+				return facility;
+			}),
+		);
+
+		const foodType = await db.foodType.findFirst({
+			where: { id: input.foodType },
+		});
+		if (!foodType)
+			throw new HTTPException(404, {
+				message: `Tipe makanan dengan id ${input.foodType} tidak ditemukan`,
+			});
+
+		await Promise.all(
+			input.foodMenus.map(async (foodMenu) => {
+				const food = await db.foodMenu.findFirst({
+					where: { id: foodMenu.id },
+				});
+				if (!food)
+					throw new HTTPException(404, {
+						message: `Menu makanan dengan id ${foodMenu.id} tidak ditemukan`,
+					});
+				return food;
+			}),
+		);
+
+		const hotel = await db.hotel.create({
+			data: {
+				rating: input.rating,
+				name: input.name,
+				helpLink: input.helpLink,
+				description: input.description,
+				facilities: {
+					connect: facilities,
+				},
+				mapLink: input.mapLink,
+				address: input.address,
+				distance: input.distance,
+				foodType: { connect: foodType },
+				foodMenus: {
+					createMany: {
+						data: input.foodMenus.map((foodMenu) => ({
+							foodMenuId: foodMenu.id,
+							amount: foodMenu.amount,
+						})),
+					},
+				},
+				reviewLink: input.reviewLink,
+			},
+			include: {
+				facilities: true,
+				foodType: true,
+				foodMenus: { include: { foodMenu: true } },
+			},
+		});
 
 		return {
 			id: hotel.id,
-			thumbnail: thumbnail.src,
+			thumbnail: null,
 			rating: hotel.rating,
 			name: hotel.name,
 			helpLink: hotel.helpLink,
-			images: images.map((image) => image.src),
+			images: [],
 			description: hotel.description,
-			facilities,
+			facilities: hotel.facilities.map((facility) => ({
+				id: facility.id,
+				name: facility.name,
+				icon: facility.icon,
+			})),
 			mapLink: hotel.mapLink,
 			address: hotel.address,
 			distance: hotel.distance,
-			foodType: foodType.name,
-			foodAmount: hotel.foodAmount,
-			foodMenus: foodMenusHotel.map((foodMenuHotel) => ({
-				amount: foodMenuHotel.amount,
-				name: foodMenuHotel.foodMenu.name,
+			foodType: {
+				id: hotel.foodType.id,
+				name: hotel.foodType.name,
+			},
+			foodAmount: hotel.foodMenus.reduce((prev, curr) => prev + curr.amount, 0),
+			foodMenus: hotel.foodMenus.map((foodMenu) => ({
+				foodMenu: {
+					id: foodMenu.foodMenu.id,
+					name: foodMenu.foodMenu.name,
+				},
+				amount: foodMenu.amount,
 			})),
 			reviewLink: hotel.reviewLink,
 		};
 	}
 
-	async create(input: HotelInput): Promise<HotelOutput> {
-		const thumbnail = await this.imageService.create({
-			file: input.thumbnail,
-			alt: `${input.name}'s thumbnail`,
-		});
-
-		const images = await this.imageService.createMany(
-			input["images[]"].map((inputImage) => ({
-				file: inputImage,
-				alt: `Gambar Hotel ${input.name}`,
-			})),
-		);
-
-		const facilities = await this.facilityService.getMany(
-			input.facilities.map((facility) => ({ id: facility })),
-		);
-
-		const foodType = await this.foodTypeService.get({ id: input.foodType });
-
-		const hotel = await db.hotel.create({
-			data: {
-				...{
-					...input,
-					"images[]": undefined,
-				},
-				thumbnail: { connect: thumbnail },
-				images: { connect: images },
-				facilities: { connect: facilities },
-				foodType: { connect: foodType },
-				foodMenus: {},
+	async getAll(): Promise<HotelOutput[]> {
+		const hotels = await db.hotel.findMany({
+			include: {
+				thumbnail: true,
+				images: true,
+				facilities: true,
+				foodType: true,
+				foodMenus: { include: { foodMenu: true } },
 			},
 		});
 
-		await this.foodMenuHotelService.createMany(
-			input.foodMenus.map((foodMenu) => ({
-				hotel: hotel.id,
-				foodMenu: foodMenu.id,
+		return hotels.map((hotel) => ({
+			id: hotel.id,
+			thumbnail: hotel.thumbnail
+				? {
+						id: hotel.thumbnail.id,
+						src: hotel.thumbnail.src,
+						alt: hotel.thumbnail.alt,
+					}
+				: null,
+			rating: hotel.rating,
+			name: hotel.name,
+			helpLink: hotel.helpLink,
+			images: hotel.images.map((image) => ({
+				id: image.id,
+				src: image.src,
+				alt: image.alt,
+			})),
+			description: hotel.description,
+			facilities: hotel.facilities.map((facility) => ({
+				id: facility.id,
+				name: facility.name,
+				icon: facility.icon,
+			})),
+			mapLink: hotel.mapLink,
+			address: hotel.address,
+			distance: hotel.distance,
+			foodType: {
+				id: hotel.foodType.id,
+				name: hotel.foodType.name,
+			},
+			foodAmount: hotel.foodMenus.reduce((prev, curr) => prev + curr.amount, 0),
+			foodMenus: hotel.foodMenus.map((foodMenu) => ({
+				foodMenu: {
+					id: foodMenu.foodMenu.id,
+					name: foodMenu.foodMenu.name,
+				},
 				amount: foodMenu.amount,
 			})),
-		);
-
-		return await this.map(hotel);
-	}
-
-	async getAll(): Promise<HotelOutput[]> {
-		const hotels = await db.hotel.findMany();
-
-		return await Promise.all(hotels.map(this.map.bind(this)));
+			reviewLink: hotel.reviewLink,
+		}));
 	}
 
 	async get(param: HotelParam): Promise<HotelOutput> {
 		const hotel = await db.hotel.findUnique({
 			where: param,
+			include: {
+				thumbnail: true,
+				images: true,
+				facilities: true,
+				foodType: true,
+				foodMenus: { include: { foodMenu: true } },
+			},
 		});
+		if (!hotel)
+			throw new HTTPException(404, {
+				message: `Hotel dengan id ${param.id} tidak ditemukan`,
+			});
+
+		return {
+			id: hotel.id,
+			thumbnail: hotel.thumbnail
+				? {
+						id: hotel.thumbnail.id,
+						src: hotel.thumbnail.src,
+						alt: hotel.thumbnail.alt,
+					}
+				: null,
+			rating: hotel.rating,
+			name: hotel.name,
+			helpLink: hotel.helpLink,
+			images: hotel.images.map((image) => ({
+				id: image.id,
+				src: image.src,
+				alt: image.alt,
+			})),
+			description: hotel.description,
+			facilities: hotel.facilities.map((facility) => ({
+				id: facility.id,
+				name: facility.name,
+				icon: facility.icon,
+			})),
+			mapLink: hotel.mapLink,
+			address: hotel.address,
+			distance: hotel.distance,
+			foodType: {
+				id: hotel.foodType.id,
+				name: hotel.foodType.name,
+			},
+			foodAmount: hotel.foodMenus.reduce((prev, curr) => prev + curr.amount, 0),
+			foodMenus: hotel.foodMenus.map((foodMenu) => ({
+				foodMenu: {
+					id: foodMenu.foodMenu.id,
+					name: foodMenu.foodMenu.name,
+				},
+				amount: foodMenu.amount,
+			})),
+			reviewLink: hotel.reviewLink,
+		};
+	}
+
+	async update(param: HotelParam, input: HotelInput): Promise<HotelOutput> {
+		const hotel = await db.hotel.update({
+			data: {
+				rating: input.rating,
+				name: input.name,
+				helpLink: input.helpLink,
+				description: input.description,
+				facilities: {
+					set: input.facilities.map((facility) => ({ id: facility })),
+				},
+				mapLink: input.mapLink,
+				address: input.address,
+				distance: input.distance,
+				foodType: { connect: { id: input.foodType } },
+				foodMenus: {
+					deleteMany: {},
+					createMany: {
+						data: input.foodMenus.map((foodMenu) => ({
+							foodMenuId: foodMenu.id,
+							amount: foodMenu.amount,
+						})),
+					},
+				},
+				reviewLink: input.reviewLink,
+			},
+			where: {
+				id: param.id,
+			},
+			include: {
+				thumbnail: true,
+				images: true,
+				facilities: true,
+				foodType: true,
+				foodMenus: { include: { foodMenu: true } },
+			},
+		});
+
 		if (!hotel)
 			throw new HTTPException(404, { message: "Hotel tidak ditemukan" });
 
-		return await this.map(hotel);
-	}
-
-	async update(
-		param: HotelParam,
-		input: HotelInput,
-		throwIfNotFound?: boolean,
-	): Promise<HotelOutput> {
-		const thumbnail = await this.imageService.create({
-			file: input.thumbnail,
-			alt: `${input.name}'s thumbnail`,
-		});
-
-		const images = await this.imageService.createMany(
-			input["images[]"].map((inputImage) => ({
-				file: inputImage,
-				alt: `Gambar Hotel ${input.name}`,
+		return {
+			id: hotel.id,
+			thumbnail: hotel.thumbnail
+				? {
+						id: hotel.thumbnail.id,
+						src: hotel.thumbnail.src,
+						alt: hotel.thumbnail.alt,
+					}
+				: null,
+			rating: hotel.rating,
+			name: hotel.name,
+			helpLink: hotel.helpLink,
+			images: hotel.images.map((image) => ({
+				id: image.id,
+				src: image.src,
+				alt: image.alt,
 			})),
-		);
-
-		const facilities = await this.facilityService.getMany(
-			input.facilities.map((facility) => ({ id: facility })),
-		);
-
-		const foodType = await this.foodTypeService.get({ id: input.foodType });
-
-		const hotel = await db.hotel.update({
-			where: param,
-			data: {
-				...{
-					...input,
-					"images[]": undefined,
-				},
-				thumbnail: { connect: thumbnail },
-				images: { set: images },
-				facilities: { set: facilities },
-				foodType: { connect: foodType },
-				foodMenus: { deleteMany: {} },
+			description: hotel.description,
+			facilities: hotel.facilities.map((facility) => ({
+				id: facility.id,
+				name: facility.name,
+				icon: facility.icon,
+			})),
+			mapLink: hotel.mapLink,
+			address: hotel.address,
+			distance: hotel.distance,
+			foodType: {
+				id: hotel.foodType.id,
+				name: hotel.foodType.name,
 			},
-		});
-		if (!hotel && throwIfNotFound)
-			throw new HTTPException(404, { message: "Hotel tidak ditemukan" });
-
-		await this.foodMenuHotelService.createMany(
-			input.foodMenus.map((foodMenu) => ({
-				hotel: hotel.id,
-				foodMenu: foodMenu.id,
+			foodAmount: hotel.foodMenus.reduce((prev, curr) => prev + curr.amount, 0),
+			foodMenus: hotel.foodMenus.map((foodMenu) => ({
+				foodMenu: {
+					id: foodMenu.foodMenu.id,
+					name: foodMenu.foodMenu.name,
+				},
 				amount: foodMenu.amount,
 			})),
-		);
-
-		return await this.map(hotel);
+			reviewLink: hotel.reviewLink,
+		};
 	}
 
-	async delete(
+	async delete(param: HotelParam): Promise<HotelOutput> {
+		const hotel = await db.hotel.delete({
+			where: { id: param.id },
+			include: {
+				thumbnail: true,
+				images: true,
+				facilities: true,
+				foodType: true,
+				foodMenus: { include: { foodMenu: true } },
+			},
+		});
+		if (!hotel)
+			throw new HTTPException(404, {
+				message: `Hotel dengan id ${param.id} tidak ditemukan`,
+			});
+
+		return {
+			id: hotel.id,
+			thumbnail: hotel.thumbnail
+				? {
+						id: hotel.thumbnail.id,
+						src: hotel.thumbnail.src,
+						alt: hotel.thumbnail.alt,
+					}
+				: null,
+			rating: hotel.rating,
+			name: hotel.name,
+			helpLink: hotel.helpLink,
+			images: hotel.images.map((image) => ({
+				id: image.id,
+				src: image.src,
+				alt: image.alt,
+			})),
+			description: hotel.description,
+			facilities: hotel.facilities.map((facility) => ({
+				id: facility.id,
+				name: facility.name,
+				icon: facility.icon,
+			})),
+			mapLink: hotel.mapLink,
+			address: hotel.address,
+			distance: hotel.distance,
+			foodType: {
+				id: hotel.foodType.id,
+				name: hotel.foodType.name,
+			},
+			foodAmount: hotel.foodMenus.reduce((prev, curr) => prev + curr.amount, 0),
+			foodMenus: hotel.foodMenus.map((foodMenu) => ({
+				foodMenu: {
+					id: foodMenu.foodMenu.id,
+					name: foodMenu.foodMenu.name,
+				},
+				amount: foodMenu.amount,
+			})),
+			reviewLink: hotel.reviewLink,
+		};
+	}
+
+	async updateThumbnail(
 		param: HotelParam,
-		throwIfNotFound?: boolean,
-	): Promise<HotelOutput> {
-		const hotel = await db.$transaction(async (tx) => {
-			await tx.foodMenuHotel.deleteMany({
-				where: {
-					hotelId: param.id,
-				},
+		input: HotelThumbnailInput,
+	): Promise<ImageOutput> {
+		let hotel = await db.hotel.findFirst({
+			where: { id: param.id },
+			include: { thumbnail: true },
+		});
+		if (!hotel) {
+			throw new HTTPException(404, {
+				message: `Hotel dengan id ${param.id} tidak ditemukan`,
 			});
+		}
 
-			const hotel = await tx.hotel.delete({
-				where: param,
-			});
-			if (!hotel && throwIfNotFound)
-				throw new HTTPException(404, { message: "Hotel tidak ditemukan" });
-
-			await tx.image.deleteMany({
-				where: {
-					hotels: {
-						every: {
-							id: param.id,
-						},
-					},
-					hotelsThumbnail: {
-						every: {
-							id: param.id,
+		if (hotel.thumbnail) {
+			await this.imageService.update(hotel.thumbnail.src, input.thumbnail);
+		} else {
+			const imageFileName = await this.imageService.write(input.thumbnail);
+			hotel = await db.hotel.update({
+				data: {
+					thumbnail: {
+						create: {
+							src: imageFileName,
+							alt: `Thumbnail hotel ${hotel.name}`,
 						},
 					},
 				},
+				where: { id: param.id },
+				include: { thumbnail: true },
 			});
+		}
 
-			return hotel;
+		if (!hotel.thumbnail) {
+			throw new HTTPException(500, {
+				message: "Terjadi keasalahan saat mengunggah gambar",
+			});
+		}
+
+		return {
+			id: hotel.thumbnail.id,
+			src: hotel.thumbnail.src,
+			alt: hotel.thumbnail.alt,
+		};
+	}
+
+	async deleteThumbnail(param: HotelParam): Promise<ImageOutput> {
+		const hotel = await db.hotel.findFirst({
+			where: { id: param.id },
+			include: { thumbnail: true },
+		});
+		if (!hotel) {
+			throw new HTTPException(404, {
+				message: `Hotel dengan id ${param.id} tidak ditemukan`,
+			});
+		}
+		if (!hotel.thumbnail) {
+			throw new HTTPException(404, {
+				message: `Hotel dengan id ${param.id} tidak memiliki thumbnail`,
+			});
+		}
+
+		await this.imageService.remove(hotel.thumbnail.src);
+		await db.hotel.update({
+			data: {
+				thumbnail: { delete: {} },
+			},
+			where: { id: param.id },
 		});
 
-		return await this.map(hotel);
+		return {
+			id: hotel.thumbnail.id,
+			src: hotel.thumbnail.src,
+			alt: hotel.thumbnail.alt,
+		};
+	}
+
+	async updateImages(
+		param: HotelParam,
+		input: HotelImagesInput,
+	): Promise<ImageOutput[]> {
+		let hotel = await db.hotel.findFirst({
+			where: { id: param.id },
+			include: { images: true },
+		});
+		if (!hotel) {
+			throw new HTTPException(404, {
+				message: `Hotel dengan id ${param.id} tidak ditemukan`,
+			});
+		}
+
+		for (const oldImage of hotel.images) {
+			await this.imageService.remove(oldImage.src);
+		}
+
+		const images = [];
+		for (const image of input["images[]"]) {
+			const imageFileName = await this.imageService.write(image);
+			images.push({
+				src: imageFileName,
+				alt: `Gambar hotel ${hotel.name}`,
+			});
+		}
+
+		hotel = await db.hotel.update({
+			data: {
+				images: {
+					deleteMany: {},
+					create: images,
+				},
+			},
+			where: { id: param.id },
+			include: { images: true },
+		});
+
+		return hotel.images.map((image) => ({
+			id: image.id,
+			src: `/${image.src}`,
+			alt: image.alt,
+		}));
+	}
+
+	async deleteImages(param: HotelParam): Promise<ImageOutput[]> {
+		const hotel = await db.hotel.findFirst({
+			where: { id: param.id },
+			include: { images: true },
+		});
+		if (!hotel) {
+			throw new HTTPException(404, {
+				message: `Hotel dengan id ${param.id} tidak ditemukan`,
+			});
+		}
+
+		for (const image of hotel.images) {
+			await this.imageService.remove(image.src);
+		}
+		await db.hotel.update({
+			data: {
+				images: { deleteMany: {} },
+			},
+			where: { id: param.id },
+		});
+
+		return hotel.images.map((image) => ({
+			id: image.id,
+			src: `/${image.src}`,
+			alt: image.alt,
+		}));
 	}
 
 	private static _instance: HotelService | null = null;

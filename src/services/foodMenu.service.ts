@@ -35,7 +35,9 @@ export default class FoodMenuService extends CRUDService<
 			where: param,
 		});
 		if (!foodMenu)
-			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Menu makanan dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return foodMenu;
 	}
@@ -49,7 +51,9 @@ export default class FoodMenuService extends CRUDService<
 			data: input,
 		});
 		if (!foodMenu)
-			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Menu makanan dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return foodMenu;
 	}
@@ -59,7 +63,9 @@ export default class FoodMenuService extends CRUDService<
 			where: param,
 		});
 		if (!foodMenu)
-			throw new HTTPException(404, { message: "Menu tidak ditemukan" });
+			throw new HTTPException(404, {
+				message: `Menu makanan dengan id ${param.id} tidak ditemukan`,
+			});
 
 		return foodMenu;
 	}

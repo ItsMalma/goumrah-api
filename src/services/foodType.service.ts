@@ -36,7 +36,7 @@ export default class FoodTypeService extends CRUDService<
 		});
 		if (!foodType)
 			throw new HTTPException(404, {
-				message: "Jenis makanan tidak ditemukan",
+				message: `Jenis makanan dengan id ${param.id} tidak ditemukan`,
 			});
 
 		return foodType;
@@ -52,7 +52,7 @@ export default class FoodTypeService extends CRUDService<
 		});
 		if (!foodType)
 			throw new HTTPException(404, {
-				message: "Jenis makanan tidak ditemukan",
+				message: `Jenis makanan dengan id ${param.id} tidak ditemukan`,
 			});
 
 		return foodType;
@@ -64,7 +64,7 @@ export default class FoodTypeService extends CRUDService<
 		});
 		if (!foodType)
 			throw new HTTPException(404, {
-				message: "Jenis makanan tidak ditemukan",
+				message: `Jenis makanan dengan id ${param.id} tidak ditemukan`,
 			});
 
 		return foodType;
