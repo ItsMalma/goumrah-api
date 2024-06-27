@@ -131,6 +131,15 @@ model HotelSchedule {
   @@map("hotel_schedules")
 }
 
+model Aircraft {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  flightSchedules FlightSchedule[]
+
+  @@map("aircrafts")
+}
+
 model Airline {
   id          Int     @id @default(autoincrement())
   thumbnail   Image?  @relation("thumbnail", fields: [thumbnailId], references: [id])
@@ -151,14 +160,13 @@ model Airport {
   code String @unique
 
   flightEvents FlightEvent[]
-  transits     Transit[]
 
   @@map("airports")
 }
 
 model FlightEvent {
   id        Int      @id @default(autoincrement())
-  dateTime  DateTime
+  dateTime  DateTime @db.Timestamptz()
   airport   Airport  @relation(fields: [airportId], references: [id])
   airportId Int      @map("airport_id")
   terminal  String
@@ -169,33 +177,22 @@ model FlightEvent {
   @@map("flight_events")
 }
 
-model Transit {
-  id        Int      @id @default(autoincrement())
-  duration  Int
-  airport   Airport? @relation(fields: [airportId], references: [id])
-  airportId Int?     @map("airport_id")
-
-  flightSchedules FlightSchedule?
-
-  @@map("transits")
-}
-
 model FlightSchedule {
-  id           Int             @id @default(autoincrement())
-  takeOff      FlightEvent     @relation("takeOff", fields: [takeOffId], references: [id])
-  takeOffId    Int             @unique @map("take_off_id")
-  duration     Int
-  flightNumber String
-  aircraftType String
-  baggage      Int
-  cabinBaggage Int
-  seatLayout   String
-  landing      FlightEvent     @relation("landing", fields: [landingId], references: [id])
-  landingId    Int             @unique @map("landing_id")
-  transit      Transit?        @relation(fields: [transitId], references: [id])
-  transitId    Int?            @unique @map("transit_id")
-  next         FlightSchedule? @relation("next", fields: [nextId], references: [id])
-  nextId       Int?            @unique @map("next_id")
+  id              Int             @id @default(autoincrement())
+  transitDuration Int?
+  takeOff         FlightEvent     @relation("takeOff", fields: [takeOffId], references: [id])
+  takeOffId       Int             @unique @map("take_off_id")
+  duration        Int
+  flightNumber    String
+  aircraft        Aircraft        @relation(fields: [aircraftId], references: [id])
+  aircraftId      Int             @map("aircraft_id")
+  baggage         Int
+  cabinBaggage    Int
+  seatLayout      String
+  landing         FlightEvent     @relation("landing", fields: [landingId], references: [id])
+  landingId       Int             @unique @map("landing_id")
+  next            FlightSchedule? @relation("next", fields: [nextId], references: [id])
+  nextId          Int?            @unique @map("next_id")
 
   prev            FlightSchedule? @relation("next")
   flightsOutbound Flight?         @relation("outbound")

@@ -11,7 +11,7 @@ import {
 } from "valibot";
 import { isNumeric } from "validator";
 
-export const roomTypeInputSchema = object(
+export const aircraftInputSchema = object(
 	{
 		name: pipe(
 			string("Harus berupa string"),
@@ -20,19 +20,19 @@ export const roomTypeInputSchema = object(
 	},
 	"Harus berupa object",
 );
-export type RoomTypeInput = InferOutput<typeof roomTypeInputSchema>;
+export type AircraftInput = InferOutput<typeof aircraftInputSchema>;
 
-export const roomTypeOutputSchema = object({
+export const aircraftOutputSchema = object({
 	id: number(),
 	name: string(),
 });
-export type RoomTypeOutput = InferOutput<typeof roomTypeOutputSchema>;
+export type AircraftOutput = InferOutput<typeof aircraftOutputSchema>;
 
-export const roomTypeParamSchema = object({
+export const aircraftParamSchema = object({
 	id: pipe(
 		unknown(),
 		check(isNumeric, "Harus berupa angka"),
 		transform(Number),
 	),
 });
-export type RoomTypeParam = InferOutput<typeof roomTypeParamSchema>;
+export type AircraftParam = InferOutput<typeof aircraftParamSchema>;
